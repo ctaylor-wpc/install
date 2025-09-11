@@ -11,6 +11,7 @@ from pdfrw import PdfName
 from pdfrw import PdfReader
 from pdfrw import PdfWriter
 from pdfrw import PageMerge
+import fitz
 
 # STEP 0: Initialize session state and configuration
 def initialize_app():
