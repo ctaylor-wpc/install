@@ -306,6 +306,12 @@ def generate_pdf(plants_data, installation_data, customer_data, pricing_data):
             "subtotal": f"${pricing_data.get('final_subtotal', 0):.2f}",
             "tax": f"${pricing_data.get('final_tax', 0):.2f}",
             "delivery_cost": f"${pricing_data.get('delivery_cost', 0):.2f}",
+            "total_tablet_quantity": f"${pricing_data.get('total_tablet_quantity', 0):.2f}",
+            "total_mulch_quantity": f"${pricing_data.get('total_mulch_quantity', 0):.2f}",
+            "total_soil_quantity": f"${pricing_data.get('total_soil_quantity', 0):.2f}",
+            "tablet_total_price": f"${pricing_data.get('tablet_total_price', 0):.2f}",
+            "mulch_total_price": f"${pricing_data.get('mulch_total_price', 0):.2f}",
+            "soil_conditioner_total_price": f"${pricing_data.get('soil_conditioner_total_price', 0):.2f}",
         }
 
         def sanitize_for_pdf(value):
