@@ -307,10 +307,10 @@ def generate_pdf(plants_data, installation_data, customer_data, pricing_data):
 def send_to_zapier(plants_data, installation_data, customer_data, pricing_data):
     """Send data to Zapier webhook"""
     try:
-        webhook_url = st.secrets.get("ZAPIER_WEBHOOK_URL", "")
+        webhook_url = st.secrets.get("zapier", {}).get("webhook_url", "")
         if not webhook_url:
-            st.error("Zapier webhook URL not found in secrets")
-            return False
+            st.warning("Zapier webhook URL not found in secrets - skipping database integration")
+            return True
             
         payload = {
             "plants": plants_data,
