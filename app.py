@@ -7,6 +7,16 @@ import io
 import re
 import math
 
+# Google Maps API Key
+GOOGLE_MAPS_API_KEY = st.secrets["api"]["google_maps_api_key"]
+
+# Email config
+SMTP_SERVER = st.secrets["email"]["smtp_server"]
+SMTP_PORT = st.secrets["email"]["smtp_port"]
+SENDER_EMAIL = st.secrets["email"]["sender_email"]
+SENDER_PASSWORD = st.secrets["email"]["sender_password"]
+NOTIFY_EMAIL = st.secrets["email"]["notify_email"]
+
 # STEP 0: Initialize session state and configuration
 def initialize_app():
     """Initialize the Streamlit app with session state variables"""
