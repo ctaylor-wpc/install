@@ -55,7 +55,7 @@ def validate_numeric_input(value, field_name):
         return 0
 
 # STEP 2: Plant size and mulch lookup tables
-def get_mulch_soil_tablet_quantities(plant_size, mulch_type, quantity):
+def get_mulch_soil_tablet_quantities(plant_size, mulch_type, mulch_sku, quantity):
     """Calculate mulch, soil conditioner, and tablet quantities based on plant size and type"""
     try:
         # Lookup table for plant sizes
