@@ -403,24 +403,24 @@ def generate_pdf(plants_data, installation_data, customer_data, pricing_data):
         st.error(f"Error generating PDF: {e}")
         return None
 
-# Flatten the PDF
-try:
-    reader = PdfReader("filled_form.pdf")  # the PDF you just generated
-    writer = PdfWriter()
+    # Flatten the PDF
+    try:
+        reader = PdfReader("filled_form.pdf")  # the PDF you just generated
+        writer = PdfWriter()
     
-    for page in reader.pages:
-        writer.add_page(page)
+        for page in reader.pages:
+            writer.add_page(page)
     
-    writer.remove_annotations()  # flatten form fields
+        writer.remove_annotations()  # flatten form fields
     
-    with open("flattened.pdf", "wb") as f:
-        writer.write(f)
+        with open("flattened.pdf", "wb") as f:
+            writer.write(f)
     
-    st.success("PDF flattened successfully!")
+        st.success("PDF flattened successfully!")
 
-except Exception as e:
-    st.error(f"Error flattening PDF: {e}")
-    return None
+    except Exception as e:
+        st.error(f"Error flattening PDF: {e}")
+        return None
 
 # STEP 6: Zapier integration
 def send_to_zapier(plants_data, installation_data, customer_data, pricing_data):
