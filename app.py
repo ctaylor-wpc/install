@@ -181,9 +181,9 @@ def calculate_pricing(plants_data, installation_data):
             total_tablet_quantity += tablet_qty
         
         # Round quantities to whole numbers
-        total_mulch_quantity = round(total_mulch_quantity)
-        total_soil_quantity = round(total_soil_quantity)
-        total_tablet_quantity = round(total_tablet_quantity)
+        total_mulch_quantity = math.ceil(total_mulch_quantity)
+        total_soil_quantity = math.ceil(total_soil_quantity)
+        total_tablet_quantity = math.ceil(total_tablet_quantity)
         
 
 
