@@ -266,7 +266,7 @@ def calculate_pricing(plants_data, installation_data):
 
             'tablet_total_price': tablet_total_price,
             'mulch_total_price': mulch_total_price,
-            'soil_conditioner_total_price': soil_conditioner_total_price
+            'soil_conditioner_total_price': soil_conditioner_total_price,
             'deer_guard_price': deer_guard_price,
             'tree_stakes_price': tree_stakes_price,
         }
