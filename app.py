@@ -185,24 +185,56 @@ def calculate_pricing(plants_data, installation_data):
         total_soil_quantity = round(total_soil_quantity)
         total_tablet_quantity = round(total_tablet_quantity)
         
+
+
+
         # CHANGE PRICING HERE - Update these values if pricing changes
+
+
+
+
+        # INSTALL MATERIALS PRICING
         tablet_unit_price = 0.75
         soil_conditioner_unit_price = 9.99
         deer_guard_unit_price = 3.99
         tree_stake_unit_price = 36.00
         
-        # Mulch pricing by type
+        # MULCH PRICING AND SKU BY TYPE
         mulch_type = installation_data.get('mulch_type', '')
+
         if mulch_type == "Soil Conditioner Only":
             mulch_unit_price = 9.99
-        elif mulch_type in ["Hardwood", "Eastern Red Cedar", "Pine Bark", "Pine Bark Mini Nuggets", "Pine Bark Nuggets"]:
+            mulch_sku = "07SOILC02"
+        elif mulch_type == "Hardwood":
             mulch_unit_price = 8.99
-        elif mulch_type in ["Grade A Cedar", "Redwood"]:
+            mulch_sku = "7HARDRVM"
+        elif mulch_type == "Eastern Red Cedar":
+            mulch_unit_price = 8.99
+            mulch_sku = "RVM CEDAR"
+        elif mulch_type == "Pine Bark":
+            mulch_unit_price = 8.99
+            mulch_sku = "07PINEBM02"
+        elif mulch_type == "Pine Bark Mini Nuggets":
+            mulch_unit_price = 8.99
+            mulch_sku = "07PINEBMN02"
+        elif mulch_type == "Pine Bark Nuggets":
+            mulch_unit_price = 8.99
+            mulch_sku = "07PINEBN02"
+        elif mulch_type == "Grade A Cedar":
             mulch_unit_price = 16.99
+            mulch_sku = "CEDAR"
+        elif mulch_type == "Redwood":
+            mulch_unit_price = 16.99
+            mulch_sku = "REDWOODM"
         elif mulch_type == "Pine Straw":
             mulch_unit_price = 15.99
+            mulch_sku = "07PINESTRAW"
         else:
-            mulch_unit_price = 8.99  # Default
+            mulch_unit_price = 8.99  # Default price
+            mulch_sku = "7HARDRVM"
+
+
+
         
         # Calculate installation material costs
         tablet_total_price = total_tablet_quantity * tablet_unit_price
@@ -269,6 +301,7 @@ def calculate_pricing(plants_data, installation_data):
             'soil_conditioner_total_price': soil_conditioner_total_price,
             'deer_guard_price': deer_guard_price,
             'tree_stakes_price': tree_stakes_price,
+            'mulch_sku': mulch_sku
         }
         
     except Exception as e:
@@ -349,6 +382,7 @@ def generate_pdf(plants_data, installation_data, customer_data, pricing_data):
             "soil_conditioner_total_price": f"${soil_conditioner_total_price:.2f}",
             "deer_guard_price": f"${deer_guard_price:.2f}",
             "tree_stakes_price": f"${tree_stakes_price:.2f}",
+            "mulch_sku": f"${mulch_sku:.2f}",
             "installation_cost": f"${installation_cost:.2f}",
             "all_materials_discount_total": f"${all_materials_discount_total:.2f}",
             "planting_costs_total": f"${planting_costs_total:.2f}",
