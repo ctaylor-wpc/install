@@ -6,12 +6,6 @@ from reportlab.lib.pagesizes import letter
 import io
 import re
 import math
-from pdfrw import PdfObject
-from pdfrw import PdfName
-from pdfrw import PdfReader
-from pdfrw import PdfWriter
-from pdfrw import PageMerge
-import fitz
 
 # STEP 0: Initialize session state and configuration
 def initialize_app():
@@ -115,7 +109,7 @@ def calculate_driving_distance(origin, destination):
     """Calculate driving distance using Google Maps API"""
     try:
         # Get API key from Streamlit secrets
-        api_key = st.secrets["api"]["google_maps_api_key"]
+        api_key = st.secrets.get("GOOGLE_MAPS_API_KEY", "")
         if not api_key:
             st.error("Google Maps API key not found in secrets")
             return 0
@@ -268,90 +262,43 @@ def calculate_pricing(plants_data, installation_data):
 def generate_pdf(plants_data, installation_data, customer_data, pricing_data):
     """Generate PDF quote document"""
     try:
-        template_path = "install_template.pdf"
-        filled_path = "/tmp/filled_temp.pdf"
-        output_buffer = io.BytesIO()
-
-        ANNOT_KEY = "/Annots"
-        ANNOT_FIELD_KEY = "/T"
-        ANNOT_VAL_KEY = "/V"
-        SUBTYPE_KEY = "/Subtype"
-        WIDGET_SUBTYPE_KEY = "/Widget"
-
-        data = {
-            "customer_name": customer_data.get("customer_name", ""),
-            "customer_email": customer_data.get("customer_email", ""),
-            "customer_phone": customer_data.get("customer_phone", ""),
-            "customer_street_address": installation_data.get('customer_street_address', ''),
-            "customer_city": installation_data.get('customer_city', ''),
-            "customer_zip": installation_data.get('customer_zip', ''),
-            "customer_subdivision": customer_data.get("customer_subdivision", ""),
-            "customer_cross_street": customer_data.get("customer_cross_street", ""),
-            "gate_response": customer_data.get("gate_response", ""),
-            "gate_width": customer_data.get("gate_width", ""),
-            "dogs_response": customer_data.get("dogs_response", ""),
-            "install_location": customer_data.get("install_location", ""),
-            "utilities_check": customer_data.get("utilities_check", ""),
-            "notes": customer_data.get("notes", ""),
-            "employee_initials": customer_data.get("employee_initials", ""),
-            "mulch_type": installation_data.get("mulch_type", ""),
-            "tree_stakes_quantity": installation_data.get("tree_stakes_quantity", 0),
-            "deer_guards_quantity": installation_data.get("deer_guards_quantity", 0),
-            "installation_type": installation_data.get("installation_type", ""),
-            "origin_location": installation_data.get("origin_location", ""),
-            "plant_list": "\n".join(
-                [f"{p['quantity']} x {p['plant_material']} ({p['size']}) - ${p['price']:.2f}" for p in plants_data.values()]
-            ),
-            "total_price": f"${pricing_data.get('final_total', 0):.2f}",
-            "subtotal": f"${pricing_data.get('final_subtotal', 0):.2f}",
-            "tax": f"${pricing_data.get('final_tax', 0):.2f}",
-            "delivery_cost": f"${pricing_data.get('delivery_cost', 0):.2f}",
-        }
-
-        def sanitize_for_pdf(value):
-            if not isinstance(value, str):
-                value = str(value)
-            return (
-                value.replace("(", "[")
-                     .replace(")", "]")
-                     .replace("&", "and")
-                     .replace("\n", " / ")
-                     .replace("\r", "")
-                     .replace(":", "-")
-                     .replace("\"", "'")
-                     .replace("\\", "/")
-                     .strip()
-            )
-
-        template_pdf = PdfReader(template_path)
-        for page in template_pdf.pages:
-            annotations = page.get(ANNOT_KEY)
-            if annotations:
-                for annotation in annotations:
-                    if annotation.get(SUBTYPE_KEY) == WIDGET_SUBTYPE_KEY:
-                        key = annotation.get(ANNOT_FIELD_KEY)
-                        if key:
-                            key_name = str(key)[1:-1] if not isinstance(key, str) else key.strip("()")
-                            if key_name in data:
-                                value = sanitize_for_pdf(data[key_name])
-                                annotation[PdfName("V")] = PdfObject(f"({value})")
-
-        # Write the filled PDF to a temp file
-        PdfWriter(filled_path, trailer=template_pdf).write()
-
-        # Ensure annotations are rendered
-        doc = fitz.open(filled_path)
-        for page in doc:
-            widgets = page.widgets()
-            if widgets:
-                for widget in widgets:
-                    widget.update()  # Forces rendering
-                    widget.field_flags |= 1 << 0  # Optional: set ReadOnly
-        doc.save(output_buffer, deflate=True)
-        output_buffer.seek(0)
-
-        return output_buffer
-
+        buffer = io.BytesIO()
+        doc = canvas.Canvas(buffer, pagesize=letter)
+        width, height = letter
+        
+        # PDF Header
+        doc.setFont("Helvetica-Bold", 16)
+        doc.drawString(50, height - 50, "Landscaping Installation Quote")
+        
+        y_position = height - 100
+        doc.setFont("Helvetica", 12)
+        
+        # Customer Information
+        doc.drawString(50, y_position, f"Customer: {customer_data.get('customer_name', '')}")
+        y_position -= 20
+        doc.drawString(50, y_position, f"Email: {customer_data.get('customer_email', '')}")
+        y_position -= 20
+        doc.drawString(50, y_position, f"Phone: {customer_data.get('customer_phone', '')}")
+        y_position -= 30
+        
+        # Installation Details
+        doc.setFont("Helvetica-Bold", 14)
+        doc.drawString(50, y_position, "Installation Details")
+        y_position -= 20
+        doc.setFont("Helvetica", 10)
+        
+        for plant_id, plant in plants_data.items():
+            doc.drawString(50, y_position, f"{plant.get('quantity', 0)} x {plant.get('plant_material', '')} ({plant.get('size', '')}) - ${plant.get('price', 0):.2f}")
+            y_position -= 15
+        
+        y_position -= 20
+        doc.setFont("Helvetica-Bold", 12)
+        doc.drawString(50, y_position, f"Total: ${pricing_data.get('final_total', 0):.2f}")
+        
+        doc.save()
+        buffer.seek(0)
+        return buffer
+        
     except Exception as e:
         st.error(f"Error generating PDF: {e}")
         return None
