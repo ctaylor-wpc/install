@@ -12,8 +12,6 @@ from pdfrw import PdfReader
 from pdfrw import PdfWriter
 from pdfrw import PageMerge
 import fitz
-from pypdf import PdfReader, PdfWriter
-from io import BytesIO
 
 # STEP 0: Initialize session state and configuration
 def initialize_app():
@@ -277,18 +275,20 @@ def calculate_pricing(plants_data, installation_data):
         st.error(f"Error in pricing calculations: {e}")
         return {}
 
-from io import BytesIO
-import fitz  # PyMuPDF
-from pdfrw import PdfReader, PdfWriter, PdfName, PdfObject
-import streamlit as st
-
+# STEP 5: PDF generation
 def generate_pdf(plants_data, installation_data, customer_data, pricing_data):
-    """Generate and flatten PDF quote document"""
+    """Generate PDF quote document"""
     try:
         template_path = "install_template.pdf"
-        output_buffer = BytesIO()
+        filled_path = "/tmp/filled_temp.pdf"
+        output_buffer = io.BytesIO()
 
-        # --- Calculate totals ---
+        ANNOT_KEY = "/Annots"
+        ANNOT_FIELD_KEY = "/T"
+        ANNOT_VAL_KEY = "/V"
+        SUBTYPE_KEY = "/Subtype"
+        WIDGET_SUBTYPE_KEY = "/Widget"
+
         total_number_of_plants = sum([p.get("quantity", 0) for p in plants_data.values()])
         tablet_total_quantity = pricing_data.get("tablet_total_quantity", 0)
         mulch_total_quantity = pricing_data.get("mulch_total_quantity", 0)
@@ -312,7 +312,6 @@ def generate_pdf(plants_data, installation_data, customer_data, pricing_data):
             + pricing_data.get("delivery_cost", 0)
         )
 
-        # --- Prepare data for PDF ---
         data = {
             "customer_name": customer_data.get("customer_name", ""),
             "customer_email": customer_data.get("customer_email", ""),
@@ -335,8 +334,7 @@ def generate_pdf(plants_data, installation_data, customer_data, pricing_data):
             "installation_type": installation_data.get("installation_type", ""),
             "origin_location": installation_data.get("origin_location", ""),
             "plant_list": "\n".join(
-                [f"{p['quantity']} x {p['plant_material']} ({p['size']}) - ${p['price']:.2f}" 
-                 for p in plants_data.values()]
+                [f"{p['quantity']} x {p['plant_material']} ({p['size']}) - ${p['price']:.2f}" for p in plants_data.values()]
             ),
             "total_price": f"${pricing_data.get('final_total', 0):.2f}",
             "subtotal": f"${pricing_data.get('final_subtotal', 0):.2f}",
@@ -356,19 +354,20 @@ def generate_pdf(plants_data, installation_data, customer_data, pricing_data):
             "planting_costs_total": f"${planting_costs_total:.2f}",
         }
 
-        # --- Sanitize values ---
-        def sanitize(value):
+        def sanitize_for_pdf(value):
             if not isinstance(value, str):
                 value = str(value)
-            return value.replace("\n", " / ").replace("&", "and").replace("(", "[").replace(")", "]").replace(":", "-").strip()
-
-        data = {k: sanitize(v) for k, v in data.items()}
-
-        # --- Fill PDF using pdfrw ---
-        ANNOT_KEY = "/Annots"
-        ANNOT_FIELD_KEY = "/T"
-        SUBTYPE_KEY = "/Subtype"
-        WIDGET_SUBTYPE_KEY = "/Widget"
+            return (
+                value.replace("(", "[")
+                     .replace(")", "]")
+                     .replace("&", "and")
+                     .replace("\n", " / ")
+                     .replace("\r", "")
+                     .replace(":", "-")
+                     .replace("\"", "'")
+                     .replace("\\", "/")
+                     .strip()
+            )
 
         template_pdf = PdfReader(template_path)
         for page in template_pdf.pages:
@@ -380,20 +379,20 @@ def generate_pdf(plants_data, installation_data, customer_data, pricing_data):
                         if key:
                             key_name = str(key)[1:-1] if not isinstance(key, str) else key.strip("()")
                             if key_name in data:
-                                annotation[PdfName("V")] = PdfObject(f"({data[key_name]})")
+                                value = sanitize_for_pdf(data[key_name])
+                                annotation[PdfName("V")] = PdfObject(f"({value})")
 
-        # Write temp PDF
-        temp_path = "/tmp/filled_temp.pdf"
-        PdfWriter(temp_path, trailer=template_pdf).write()
+        # Write the filled PDF to a temp file
+        PdfWriter(filled_path, trailer=template_pdf).write()
 
-        # --- Flatten using PyMuPDF ---
-        doc = fitz.open(temp_path)
+        # Ensure annotations are rendered
+        doc = fitz.open(filled_path)
         for page in doc:
             widgets = page.widgets()
             if widgets:
                 for widget in widgets:
                     widget.update()  # Forces rendering
-                    widget.field_flags |= 1 << 0  # Set ReadOnly
+                    widget.field_flags |= 1 << 0  # Optional: set ReadOnly
         doc.save(output_buffer, deflate=True)
         output_buffer.seek(0)
 
@@ -402,7 +401,6 @@ def generate_pdf(plants_data, installation_data, customer_data, pricing_data):
     except Exception as e:
         st.error(f"Error generating PDF: {e}")
         return None
-
 
 # STEP 6: Zapier integration
 def send_to_zapier(plants_data, installation_data, customer_data, pricing_data):
