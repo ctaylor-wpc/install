@@ -277,6 +277,11 @@ def calculate_pricing(plants_data, installation_data):
         st.error(f"Error in pricing calculations: {e}")
         return {}
 
+from io import BytesIO
+import fitz  # PyMuPDF
+from pdfrw import PdfReader, PdfWriter, PdfName, PdfObject
+import streamlit as st
+
 def generate_pdf(plants_data, installation_data, customer_data, pricing_data):
     """Generate and flatten PDF quote document"""
     try:
@@ -330,7 +335,8 @@ def generate_pdf(plants_data, installation_data, customer_data, pricing_data):
             "installation_type": installation_data.get("installation_type", ""),
             "origin_location": installation_data.get("origin_location", ""),
             "plant_list": "\n".join(
-                [f"{p['quantity']} x {p['plant_material']} ({p['size']}) - ${p['price']:.2f}" for p in plants_data.values()]
+                [f"{p['quantity']} x {p['plant_material']} ({p['size']}) - ${p['price']:.2f}" 
+                 for p in plants_data.values()]
             ),
             "total_price": f"${pricing_data.get('final_total', 0):.2f}",
             "subtotal": f"${pricing_data.get('final_subtotal', 0):.2f}",
@@ -358,27 +364,37 @@ def generate_pdf(plants_data, installation_data, customer_data, pricing_data):
 
         data = {k: sanitize(v) for k, v in data.items()}
 
-        # --- Fill PDF ---
-        reader = PdfReader(template_path)
-        writer = PdfWriter()
+        # --- Fill PDF using pdfrw ---
+        ANNOT_KEY = "/Annots"
+        ANNOT_FIELD_KEY = "/T"
+        SUBTYPE_KEY = "/Subtype"
+        WIDGET_SUBTYPE_KEY = "/Widget"
 
-        for page in reader.pages:
-            writer.add_page(page)
-            if "/Annots" in page:
-                for annot in page["/Annots"]:
-                    if "/T" in annot:
-                        key = annot["/T"][1:-1]  # remove parentheses
-                        if key in data:
-                            annot.update({
-                                "/V": data[key],
-                                "/Ff": 1  # optional: read-only
-                            })
+        template_pdf = PdfReader(template_path)
+        for page in template_pdf.pages:
+            annotations = page.get(ANNOT_KEY)
+            if annotations:
+                for annotation in annotations:
+                    if annotation.get(SUBTYPE_KEY) == WIDGET_SUBTYPE_KEY:
+                        key = annotation.get(ANNOT_FIELD_KEY)
+                        if key:
+                            key_name = str(key)[1:-1] if not isinstance(key, str) else key.strip("()")
+                            if key_name in data:
+                                annotation[PdfName("V")] = PdfObject(f"({data[key_name]})")
 
-        # Flatten the PDF (remove all interactive fields)
-        writer.remove_annotations(subtypes=["/Widget"])
+        # Write temp PDF
+        temp_path = "/tmp/filled_temp.pdf"
+        PdfWriter(temp_path, trailer=template_pdf).write()
 
-        # Write to buffer
-        writer.write(output_buffer)
+        # --- Flatten using PyMuPDF ---
+        doc = fitz.open(temp_path)
+        for page in doc:
+            widgets = page.widgets()
+            if widgets:
+                for widget in widgets:
+                    widget.update()  # Forces rendering
+                    widget.field_flags |= 1 << 0  # Set ReadOnly
+        doc.save(output_buffer, deflate=True)
         output_buffer.seek(0)
 
         return output_buffer
@@ -386,6 +402,7 @@ def generate_pdf(plants_data, installation_data, customer_data, pricing_data):
     except Exception as e:
         st.error(f"Error generating PDF: {e}")
         return None
+
 
 # STEP 6: Zapier integration
 def send_to_zapier(plants_data, installation_data, customer_data, pricing_data):
