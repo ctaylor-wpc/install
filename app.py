@@ -12,6 +12,7 @@ from pdfrw import PdfReader
 from pdfrw import PdfWriter
 from pdfrw import PageMerge
 import fitz
+from pypdf import PdfReader, PdfWriter
 
 # STEP 0: Initialize session state and configuration
 def initialize_app():
@@ -401,6 +402,25 @@ def generate_pdf(plants_data, installation_data, customer_data, pricing_data):
     except Exception as e:
         st.error(f"Error generating PDF: {e}")
         return None
+
+# Flatten the PDF
+try:
+    reader = PdfReader("filled_form.pdf")  # the PDF you just generated
+    writer = PdfWriter()
+    
+    for page in reader.pages:
+        writer.add_page(page)
+    
+    writer.remove_annotations()  # flatten form fields
+    
+    with open("flattened.pdf", "wb") as f:
+        writer.write(f)
+    
+    st.success("PDF flattened successfully!")
+
+except Exception as e:
+    st.error(f"Error flattening PDF: {e}")
+    return None
 
 # STEP 6: Zapier integration
 def send_to_zapier(plants_data, installation_data, customer_data, pricing_data):
