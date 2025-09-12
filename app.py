@@ -375,7 +375,7 @@ def generate_pdf(plants_data, installation_data, customer_data, pricing_data):
                             })
 
         # Flatten the PDF (remove all interactive fields)
-        writer.remove_annotations()
+        writer.remove_annotations(subtypes=["/Widget"])
 
         # Write to buffer
         writer.write(output_buffer)
