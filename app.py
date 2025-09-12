@@ -55,7 +55,7 @@ def validate_numeric_input(value, field_name):
         return 0
 
 # STEP 2: Plant size and mulch lookup tables
-def get_mulch_soil_tablet_quantities(plant_size, mulch_type, mulch_sku, quantity):
+def get_mulch_soil_tablet_quantities(plant_size, mulch_type, quantity):
     """Calculate mulch, soil conditioner, and tablet quantities based on plant size and type"""
     try:
         # Lookup table for plant sizes
@@ -201,6 +201,7 @@ def calculate_pricing(plants_data, installation_data):
         
         # MULCH PRICING AND SKU BY TYPE
         mulch_type = installation_data.get('mulch_type', '')
+        mulch_sku = ""
 
         if mulch_type == "Soil Conditioner Only":
             mulch_unit_price = 9.99
