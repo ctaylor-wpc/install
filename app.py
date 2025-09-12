@@ -279,15 +279,15 @@ def generate_pdf(plants_data, installation_data, customer_data, pricing_data):
         WIDGET_SUBTYPE_KEY = "/Widget"
 
         total_number_of_plants = sum([p.get("quantity", 0) for p in plants_data.values()])
-        tablet_total_quantity = installation_data.get("tablet_total_quantity", 0)
-        mulch_total_quantity = installation_data.get("mulch_total_quantity", 0)
-        soil_conditioner_total_quantity = installation_data.get("soil_conditioner_total_quantity", 0)
+        tablet_total_quantity = pricing_data.get("tablet_total_quantity", 0)
+        mulch_total_quantity = pricing_data.get("mulch_total_quantity", 0)
+        soil_conditioner_total_quantity = pricing_data.get("soil_conditioner_total_quantity", 0)
 
-        tablet_total_price = installation_data.get("tablet_total_price", 0)
-        mulch_total_price = installation_data.get("mulch_total_price", 0)
-        soil_conditioner_total_price = installation_data.get("soil_conditioner_total_price", 0)
-        deer_guard_price = installation_data.get("deer_guard_price", 0)
-        tree_stakes_price = installation_data.get("tree_stakes_price", 0)
+        tablet_total_price = pricing_data.get("tablet_total_price", 0)
+        mulch_total_price = pricing_data.get("mulch_total_price", 0)
+        soil_conditioner_total_price = pricing_data.get("soil_conditioner_total_price", 0)
+        deer_guard_price = pricing_data.get("deer_guard_price", 0)
+        tree_stakes_price = pricing_data.get("tree_stakes_price", 0)
 
         installation_cost = pricing_data.get("installation_cost", 0)
 
