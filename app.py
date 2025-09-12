@@ -13,6 +13,7 @@ from pdfrw import PdfWriter
 from pdfrw import PageMerge
 import fitz
 from pypdf import PdfReader, PdfWriter
+from io import BytesIO
 
 # STEP 0: Initialize session state and configuration
 def initialize_app():
@@ -276,20 +277,13 @@ def calculate_pricing(plants_data, installation_data):
         st.error(f"Error in pricing calculations: {e}")
         return {}
 
-# STEP 5: PDF generation
 def generate_pdf(plants_data, installation_data, customer_data, pricing_data):
-    """Generate PDF quote document"""
+    """Generate and flatten PDF quote document"""
     try:
         template_path = "install_template.pdf"
-        filled_path = "/tmp/filled_temp.pdf"
-        output_buffer = io.BytesIO()
+        output_buffer = BytesIO()
 
-        ANNOT_KEY = "/Annots"
-        ANNOT_FIELD_KEY = "/T"
-        ANNOT_VAL_KEY = "/V"
-        SUBTYPE_KEY = "/Subtype"
-        WIDGET_SUBTYPE_KEY = "/Widget"
-
+        # --- Calculate totals ---
         total_number_of_plants = sum([p.get("quantity", 0) for p in plants_data.values()])
         tablet_total_quantity = pricing_data.get("tablet_total_quantity", 0)
         mulch_total_quantity = pricing_data.get("mulch_total_quantity", 0)
@@ -313,6 +307,7 @@ def generate_pdf(plants_data, installation_data, customer_data, pricing_data):
             + pricing_data.get("delivery_cost", 0)
         )
 
+        # --- Prepare data for PDF ---
         data = {
             "customer_name": customer_data.get("customer_name", ""),
             "customer_email": customer_data.get("customer_email", ""),
@@ -355,71 +350,41 @@ def generate_pdf(plants_data, installation_data, customer_data, pricing_data):
             "planting_costs_total": f"${planting_costs_total:.2f}",
         }
 
-        def sanitize_for_pdf(value):
+        # --- Sanitize values ---
+        def sanitize(value):
             if not isinstance(value, str):
                 value = str(value)
-            return (
-                value.replace("(", "[")
-                     .replace(")", "]")
-                     .replace("&", "and")
-                     .replace("\n", " / ")
-                     .replace("\r", "")
-                     .replace(":", "-")
-                     .replace("\"", "'")
-                     .replace("\\", "/")
-                     .strip()
-            )
+            return value.replace("\n", " / ").replace("&", "and").replace("(", "[").replace(")", "]").replace(":", "-").strip()
 
-        template_pdf = PdfReader(template_path)
-        for page in template_pdf.pages:
-            annotations = page.get(ANNOT_KEY)
-            if annotations:
-                for annotation in annotations:
-                    if annotation.get(SUBTYPE_KEY) == WIDGET_SUBTYPE_KEY:
-                        key = annotation.get(ANNOT_FIELD_KEY)
-                        if key:
-                            key_name = str(key)[1:-1] if not isinstance(key, str) else key.strip("()")
-                            if key_name in data:
-                                value = sanitize_for_pdf(data[key_name])
-                                annotation[PdfName("V")] = PdfObject(f"({value})")
+        data = {k: sanitize(v) for k, v in data.items()}
 
-        # Write the filled PDF to a temp file
-        PdfWriter(filled_path, trailer=template_pdf).write()
+        # --- Fill PDF ---
+        reader = PdfReader(template_path)
+        writer = PdfWriter()
 
-        # Ensure annotations are rendered
-        doc = fitz.open(filled_path)
-        for page in doc:
-            widgets = page.widgets()
-            if widgets:
-                for widget in widgets:
-                    widget.update()  # Forces rendering
-                    widget.field_flags |= 1 << 0  # Optional: set ReadOnly
-        doc.save(output_buffer, deflate=True)
+        for page in reader.pages:
+            writer.add_page(page)
+            if "/Annots" in page:
+                for annot in page["/Annots"]:
+                    if "/T" in annot:
+                        key = annot["/T"][1:-1]  # remove parentheses
+                        if key in data:
+                            annot.update({
+                                "/V": data[key],
+                                "/Ff": 1  # optional: read-only
+                            })
+
+        # Flatten the PDF (remove all interactive fields)
+        writer.remove_annotations()
+
+        # Write to buffer
+        writer.write(output_buffer)
         output_buffer.seek(0)
 
         return output_buffer
 
     except Exception as e:
         st.error(f"Error generating PDF: {e}")
-        return None
-
-    # Flatten the PDF
-    try:
-        reader = PdfReader("filled_form.pdf")  # the PDF you just generated
-        writer = PdfWriter()
-    
-        for page in reader.pages:
-            writer.add_page(page)
-    
-        writer.remove_annotations()  # flatten form fields
-    
-        with open("flattened.pdf", "wb") as f:
-            writer.write(f)
-    
-        st.success("PDF flattened successfully!")
-
-    except Exception as e:
-        st.error(f"Error flattening PDF: {e}")
         return None
 
 # STEP 6: Zapier integration
