@@ -201,7 +201,7 @@ def calculate_pricing(plants_data, installation_data):
         
         # MULCH PRICING AND SKU BY TYPE
         mulch_type = installation_data.get('mulch_type', '')
-        mulch_sku = ""
+        mulch_sku = "placeholder"
 
         if mulch_type == "Soil Conditioner Only":
             mulch_unit_price = 9.99
@@ -302,7 +302,7 @@ def calculate_pricing(plants_data, installation_data):
             'soil_conditioner_total_price': soil_conditioner_total_price,
             'deer_guard_price': deer_guard_price,
             'tree_stakes_price': tree_stakes_price,
-            'mulch_sku': mulch_sku
+            'mulch_sku': mulch_sku,
         }
         
     except Exception as e:
@@ -333,6 +333,7 @@ def generate_pdf(plants_data, installation_data, customer_data, pricing_data):
         soil_conditioner_total_price = pricing_data.get("soil_conditioner_total_price", 0)
         deer_guard_price = pricing_data.get("deer_guard_price", 0)
         tree_stakes_price = pricing_data.get("tree_stakes_price", 0)
+        mulch_sku = pricing_data.get("mulch_sku", 0)
 
         installation_cost = pricing_data.get("installation_cost", 0)
 
