@@ -257,7 +257,18 @@ def calculate_pricing(plants_data, installation_data):
             'final_total': final_total,
             'total_mulch_quantity': total_mulch_quantity,
             'total_soil_quantity': total_soil_quantity,
-            'total_tablet_quantity': total_tablet_quantity
+            'total_tablet_quantity': total_tablet_quantity,
+
+            #just for pdf
+            'tablet_total_quantity': total_tablet_quantity,
+            'mulch_total_quantity': total_mulch_quantity,
+            'soil_conditioner_total_quantity': total_soil_quantity,
+
+            'tablet_total_price': tablet_total_price,
+            'mulch_total_price': mulch_total_price,
+            'soil_conditioner_total_price': soil_conditioner_total_price
+            'deer_guard_price': deer_guard_price,
+            'tree_stakes_price': tree_stakes_price,
         }
         
     except Exception as e:
