@@ -12,6 +12,53 @@ from pdfrw import PdfReader
 from pdfrw import PdfWriter
 from pdfrw import PageMerge
 import fitz
+import gspread
+from google.oauth2.service_account import Credentials
+from googleapiclient.discovery import build
+import datetime
+from pydrive2.auth import GoogleAuth
+from pydrive2.drive import GoogleDrive
+import json
+
+def _get_service_account_info_from_secrets():
+    """
+    Reads service account JSON stored in st.secrets["gcp"]["service_account_json"].
+    Handles either a dict or a JSON string (escaped newlines etc).
+    """
+    sa = st.secrets.get("gcp", {}).get("service_account_json")
+    if not sa:
+        raise KeyError("Service account JSON not found: check st.secrets['gcp']['service_account_json']")
+    # If it's already dict-like (rare in secrets), use it. Otherwise parse JSON string.
+    if isinstance(sa, str):
+        return json.loads(sa)
+    return sa
+
+SCOPES = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive"
+]
+
+def get_gspread_client():
+    sa_info = st.secrets["gcp_service_account"]
+    
+    creds = Credentials.from_service_account_info(sa_info, scopes=SCOPES)
+    
+    client = gspread.authorize(creds)
+    return client
+
+client = get_gspread_client()
+
+# open by sheet ID (easiest/reliable way)
+SHEET_ID = "your-google-sheet-id-here"
+sheet = client.open_by_key(SHEET_ID).sheet1
+
+# quick test: append a row
+sheet.append_row(["hello", "world"])
+
+
+
+
+
 
 # STEP 0: Initialize session state and configuration
 def initialize_app():
@@ -446,22 +493,23 @@ def send_to_zapier(plants_data, installation_data, customer_data, pricing_data):
         if not webhook_url:
             st.warning("Zapier webhook URL not found in secrets - skipping database integration")
             return True
-            
+        
+        # Add data validation before sending
+        required_fields = ['customer_name', 'customer_email']
+        for field in required_fields:
+            if not customer_data.get(field):
+                st.error(f"Missing required field: {field}")
+                return False
+        
         payload = {
             "plants": plants_data,
             "installation": installation_data,
             "customer": customer_data,
-            "pricing": pricing_data
+            "pricing": pricing_data,
+            "timestamp": datetime.datetime.now().isoformat()  # Add timestamp
         }
         
-        response = requests.post(webhook_url, json=payload)
-        
-        if response.status_code == 200:
-            st.success("Data sent to database successfully!")
-            return True
-        else:
-            st.error(f"Error sending data to database: {response.status_code}")
-            return False
+        response = requests.post(webhook_url, json=payload, timeout=30)
             
     except Exception as e:
         st.error(f"Error with Zapier integration: {e}")
