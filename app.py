@@ -39,12 +39,9 @@ SCOPES = [
 ]
 
 def get_gspread_client():
-    sa_info = st.secrets["gcp_service_account"]
-    
+    sa_info = _get_service_account_info_from_secrets()
     creds = Credentials.from_service_account_info(sa_info, scopes=SCOPES)
-    
-    client = gspread.authorize(creds)
-    return client
+    return gspread.authorize(creds)
 
 client = get_gspread_client()
 
