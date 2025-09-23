@@ -46,7 +46,7 @@ def get_gspread_client():
 client = get_gspread_client()
 
 # open by sheet ID (easiest/reliable way)
-SHEET_ID = "your-google-sheet-id-here"
+SHEET_ID = "1kEOIdxYqPKx6R47sNdaY8lWR8PmLc6bz_PyHtYH1M7Q"
 sheet = client.open_by_key(SHEET_ID).sheet1
 
 # quick test: append a row
