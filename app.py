@@ -792,7 +792,7 @@ def main():
                         total_amount = pricing.get("final_total", 0.0)
                         sold_on = datetime.date.today().strftime("%m/%d/%Y")
 
-                        pdf_link = upload_pdf_to_drive(pdf_buffer, f"{st.session_state.customer_data['customer_name']}{st.session_state.customer_data['sold_on']}_quote.pdf")
+                        pdf_link = upload_pdf_to_drive(pdf_buffer, f"{st.session_state.customer_data['customer_name']}_quote.pdf")
 
                         row_data = [
                             customer_name,            # A Customer Name
