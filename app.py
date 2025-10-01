@@ -791,46 +791,46 @@ def main():
                         sold_on = datetime.date.today().strftime("%m/%d/%Y")
 
 
-                        customer_name: customer_data.get("customer_name", ""),
-                        customer_email: customer_data.get("customer_email", ""),
-                        customer_phone: customer_data.get("customer_phone", ""),
-                        customer_street_address: installation_data.get('customer_street_address', ''),
-                        customer_city: installation_data.get('customer_city', ''),
-                        customer_zip: installation_data.get('customer_zip', ''),
-                        customer_subdivision: customer_data.get("customer_subdivision", ""),
-                        customer_cross_street: customer_data.get("customer_cross_street", ""),
-                        gate_response: customer_data.get("gate_response", ""),
-                        gate_width: customer_data.get("gate_width", ""),
-                        dogs_response: customer_data.get("dogs_response", ""),
-                        install_location: customer_data.get("install_location", ""),
-                        utilities_check: customer_data.get("utilities_check", ""),
-                        notes: customer_data.get("notes", ""),
-                        employee_initials: customer_data.get("employee_initials", ""),
-                        mulch_type: installation_data.get("mulch_type", ""),
-                        tree_stakes_quantity: installation_data.get("tree_stakes_quantity", 0),
-                        deer_guards_quantity: installation_data.get("deer_guards_quantity", 0),
-                        installation_type: installation_data.get("installation_type", ""),
-                        origin_location: installation_data.get("origin_location", ""),
-                        plant_list: "\n".join([f"{p['quantity']} x {p['plant_material']} ({p['size']}) - ${p['price']:.2f}" for p in plants_data.values()]),
-                        total_price: f"${pricing_data.get('final_total', 0):.2f}",
-                        subtotal: f"${pricing_data.get('final_subtotal', 0):.2f}",
-                        tax: f"${pricing_data.get('final_tax', 0):.2f}",
-                        delivery_cost: f"${pricing_data.get('delivery_cost', 0):.2f}",
-                        flag_quantity: total_number_of_plants,
-                        total_tablet_quantity: tablet_total_quantity,
-                        total_mulch_quantity: mulch_total_quantity,
-                        mulch_sku: mulch_sku,
-                        mulch_type: mulch_type,
-                        total_soil_conditioner_quantity: soil_conditioner_total_quantity,
-                        tablet_total_price: f"${tablet_total_price:.2f}",
-                        mulch_total_price: f"${mulch_total_price:.2f}",
-                        soil_conditioner_total_price: f"${soil_conditioner_total_price:.2f}",
-                        deer_guard_price: f"${deer_guard_price:.2f}",
-                        tree_stakes_price: f"${tree_stakes_price:.2f}",
-                        installation_cost: f"${installation_cost:.2f}",
-                        all_materials_discount_total: f"${all_materials_discount_total:.2f}",
-                        planting_costs_total: f"${planting_costs_total:.2f}",
-                        date_sold: date_sold,
+                        customer_name: customer_data.get("customer_name", "")
+                        customer_email: customer_data.get("customer_email", "")
+                        customer_phone: customer_data.get("customer_phone", "")
+                        customer_street_address: installation_data.get('customer_street_address', '')
+                        customer_city: installation_data.get('customer_city', '')
+                        customer_zip: installation_data.get('customer_zip', '')
+                        customer_subdivision: customer_data.get("customer_subdivision", "")
+                        customer_cross_street: customer_data.get("customer_cross_street", "")
+                        gate_response: customer_data.get("gate_response", "")
+                        gate_width: customer_data.get("gate_width", "")
+                        dogs_response: customer_data.get("dogs_response", "")
+                        install_location: customer_data.get("install_location", "")
+                        utilities_check: customer_data.get("utilities_check", "")
+                        notes: customer_data.get("notes", "")
+                        employee_initials: customer_data.get("employee_initials", "")
+                        mulch_type: installation_data.get("mulch_type", "")
+                        tree_stakes_quantity: installation_data.get("tree_stakes_quantity", 0)
+                        deer_guards_quantity: installation_data.get("deer_guards_quantity", 0)
+                        installation_type: installation_data.get("installation_type", "")
+                        origin_location: installation_data.get("origin_location", "")
+                        plant_list: "\n".join([f"{p['quantity']} x {p['plant_material']} ({p['size']}) - ${p['price']:.2f}" for p in plants_data.values()])
+                        total_price: f"${pricing_data.get('final_total', 0):.2f}"
+                        subtotal: f"${pricing_data.get('final_subtotal', 0):.2f}"
+                        tax: f"${pricing_data.get('final_tax', 0):.2f}"
+                        delivery_cost: f"${pricing_data.get('delivery_cost', 0):.2f}"
+                        flag_quantity: total_number_of_plants
+                        total_tablet_quantity: tablet_total_quantity
+                        total_mulch_quantity: mulch_total_quantity
+                        mulch_sku: mulch_sku
+                        mulch_type: mulch_type
+                        total_soil_conditioner_quantity: soil_conditioner_total_quantity
+                        tablet_total_price: f"${tablet_total_price:.2f}"
+                        mulch_total_price: f"${mulch_total_price:.2f}"
+                        soil_conditioner_total_price: f"${soil_conditioner_total_price:.2f}"
+                        deer_guard_price: f"${deer_guard_price:.2f}"
+                        tree_stakes_price: f"${tree_stakes_price:.2f}"
+                        installation_cost: f"${installation_cost:.2f}"
+                        all_materials_discount_total: f"${all_materials_discount_total:.2f}"
+                        planting_costs_total: f"${planting_costs_total:.2f}"
+                        date_sold: date_sold
 
 
 
