@@ -753,14 +753,6 @@ def main():
                 mime="application/pdf"
             )
         
-        # Send to Zapier
-        send_to_zapier(
-            st.session_state.plants, 
-            st.session_state.installation_data, 
-            st.session_state.customer_data, 
-            st.session_state.pricing_data
-        )
-        
         st.markdown("---")
         col1, col2 = st.columns(2)
 
