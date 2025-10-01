@@ -54,11 +54,15 @@ def get_drive_client():
     """
     Returns a GoogleDrive client using the service account from st.secrets.
     """
-    sa_info = _get_service_account_info_from_secrets()
-    gauth = GoogleAuth()
-    gauth.settings['client_config'] = sa_info
-    gauth.ServiceAuth()
-    drive = GoogleDrive(gauth)
+    SCOPES = ["https://www.googleapis.com/auth/drive"]
+
+    SERVICE_ACCOUNT_FILE = "service_account.json"
+
+    creds = Credentials.from_service_account_file(
+        SERVICE_ACCOUNT_FILE, scopes=SCOPES
+    )
+
+    service = build('drive', 'v3', credentials=creds)
     return drive
 
 
