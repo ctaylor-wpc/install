@@ -15,7 +15,6 @@ import gspread
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload 
-from datetime import datetime
 import datetime
 import json
 
@@ -537,7 +536,7 @@ def upload_pdf_to_drive(pdf_buffer, filename):
         st.error(f"Error uploading PDF to Drive: {e}")
         return ""
 
-today_str = datetime.today().strftime("%m%d%Y")
+today_str = datetime.datetime.today().strftime("%m%d%Y")
 customer_name_clean = st.session_state.customer_data['customer_name'].replace(" ", "_")
 pdf_filename = f"{customer_name_clean}-{today_str}-Installation.pdf"
 
