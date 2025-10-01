@@ -15,6 +15,7 @@ import fitz
 import gspread
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
+from googleapiclient.http import MediaIoBaseUpload 
 import datetime
 from pydrive2.auth import GoogleAuth
 from pydrive2.drive import GoogleDrive
@@ -50,20 +51,14 @@ SHEET_ID = "1kEOIdxYqPKx6R47sNdaY8lWR8PmLc6bz_PyHtYH1M7Q"
 
 
 # Allow Access to Google Drive for PDF Upload
-def get_drive_client():
+def get_drive_service():
     """
-    Returns a GoogleDrive client using the service account from st.secrets.
+    Returns a Google Drive service using the same service account as Sheets.
     """
-    SCOPES = ["https://www.googleapis.com/auth/drive"]
-
-    SERVICE_ACCOUNT_FILE = "service_account.json"
-
-    creds = Credentials.from_service_account_file(
-        SERVICE_ACCOUNT_FILE, scopes=SCOPES
-    )
-
-    service = build('drive', 'v3', credentials=creds)
-    return drive
+    sa_info = _get_service_account_info_from_secrets()
+    creds = Credentials.from_service_account_info(sa_info, scopes=["https://www.googleapis.com/auth/drive"])
+    service = build("drive", "v3", credentials=creds)
+    return service
 
 
 
@@ -513,35 +508,33 @@ PDF_Folder_ID = "1UinHT5ZXjDrGXwfX-WBwge28nnHLfgq8"
 
 def upload_pdf_to_drive(pdf_buffer, filename):
     """
-    Uploads a PDF from a BytesIO buffer to a specified Google Drive folder.
-    Returns the shareable link to the uploaded file.
+    Upload a PDF from a BytesIO buffer to a Google Drive folder using service account credentials.
+    Returns a shareable link.
     """
     try:
-        service = get_drive_client()
+        service = get_drive_service()
 
         file_metadata = {
-            'name': filename,
-            'parents': [PDF_Folder_ID]
+            "name": filename,
+            "parents": [PDF_Folder_ID]
         }
 
-        media = MediaIoBaseUpload(pdf_buffer, mimetype='application/pdf', resumable=True)
+        media = MediaIoBaseUpload(pdf_buffer, mimetype="application/pdf", resumable=True)
 
         uploaded_file = service.files().create(
             body=file_metadata,
             media_body=media,
-            fields='id'
+            fields="id"
         ).execute()
 
-        file_id = uploaded_file.get('id')
+        file_id = uploaded_file.get("id")
 
-        # Make the file viewable via link
         service.permissions().create(
             fileId=file_id,
-            body={'type': 'anyone', 'role': 'reader'},
+            body={"type": "anyone", "role": "reader"},
         ).execute()
 
-        file_link = f"https://drive.google.com/file/d/{file_id}/view?usp=sharing"
-        return file_link
+        return f"https://drive.google.com/file/d/{file_id}/view?usp=sharing"
 
     except Exception as e:
         st.error(f"Error uploading PDF to Drive: {e}")
