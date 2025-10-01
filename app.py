@@ -729,10 +729,6 @@ def main():
                 st.error("Please fill in all required fields marked with *")
     
     # Phase 3: PDF Generation and Completion
-    today_str = datetime.datetime.today().strftime("%m%d%Y")
-    customer_name_clean = st.session_state.customer_data['customer_name'].replace(" ", "_")
-    pdf_filename = f"{customer_name_clean}-{today_str}-Installation.pdf"
-
     elif st.session_state.phase == 3:
         st.header("Quote Completed!")
         
@@ -745,7 +741,11 @@ def main():
             st.session_state.customer_data, 
             st.session_state.pricing_data
         )
-        
+
+        today_str = datetime.datetime.today().strftime("%m%d%Y")
+        customer_name_clean = st.session_state.customer_data['customer_name'].replace(" ", "_")
+        pdf_filename = f"{customer_name_clean}-{today_str}-Installation.pdf"
+
         if pdf_buffer:
             st.download_button(
                 label="Download PDF",
