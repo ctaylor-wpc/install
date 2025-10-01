@@ -1,6 +1,5 @@
 import streamlit as st
 import googlemaps
-import requests
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 import io
@@ -17,8 +16,6 @@ from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload 
 import datetime
-from pydrive2.auth import GoogleAuth
-from pydrive2.drive import GoogleDrive
 import json
 
 
@@ -539,8 +536,9 @@ def upload_pdf_to_drive(pdf_buffer, filename):
         st.error(f"Error uploading PDF to Drive: {e}")
         return ""
 
-
-
+today_str = datetime.today().strftime("%m%d%Y")
+customer_name_clean = st.session_state.customer_data['customer_name'].replace(" ", "_")
+pdf_filename = f"{customer_name_clean}-{today_str}-Installation.pdf"
 
 # MAIN APPLICATION INTERFACE
 def main():
@@ -752,7 +750,7 @@ def main():
             st.download_button(
                 label="Download PDF",
                 data=pdf_buffer,
-                file_name="landscaping_quote.pdf",
+                file_name=pdf_filename,
                 mime="application/pdf"
             )
         
@@ -792,7 +790,7 @@ def main():
                         total_amount = pricing.get("final_total", 0.0)
                         sold_on = datetime.date.today().strftime("%m/%d/%Y")
 
-                        pdf_link = upload_pdf_to_drive(pdf_buffer, f"{st.session_state.customer_data['customer_name']}_quote.pdf")
+                        pdf_link = upload_pdf_to_drive(pdf_buffer, pdf_filename)
 
                         row_data = [
                             customer_name,            # A Customer Name
@@ -805,7 +803,7 @@ def main():
                             "",                       # H BUD Clear On
                             "",                       # I Scheduled For
                             "",                       # J Completed
-                            pdf_link                        # K PDF File (left blank for now)
+                            pdf_link                  # K PDF File (left blank for now)
                         ]
 
                         sheet.append_row(row_data, value_input_option='USER_ENTERED')
