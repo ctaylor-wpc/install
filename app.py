@@ -16,7 +16,7 @@ import gspread
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 import datetime
-from pydrive2.auth import GoogleAuth, GoogleDrive
+from pydrive2.auth import GoogleAuth
 from pydrive2.drive import GoogleDrive
 import json
 
