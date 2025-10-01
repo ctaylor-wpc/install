@@ -61,8 +61,6 @@ def get_drive_client():
     drive = GoogleDrive(gauth)
     return drive
 
-PDF_Folder_ID ="1UinHT5ZXjDrGXwfX-WBwge28nnHLfgq8"
-
 
 
 # STEP 0: Initialize session state and configuration
@@ -507,42 +505,43 @@ def generate_pdf(plants_data, installation_data, customer_data, pricing_data):
 
 
 #STEP 6: Upload PDF to Google Drive
+PDF_Folder_ID = "1UinHT5ZXjDrGXwfX-WBwge28nnHLfgq8"
+
 def upload_pdf_to_drive(pdf_buffer, filename):
     """
-    Uploads the PDF in pdf_buffer to a specific folder in Google Drive.
-    Returns the sharable link.
+    Uploads a PDF from a BytesIO buffer to a specified Google Drive folder.
+    Returns the shareable link to the uploaded file.
     """
     try:
-        sa_info = _get_service_account_info_from_secrets()
-        creds = Credentials.from_service_account_info(sa_info, scopes=SCOPES)
-
-        service = build('drive', 'v3', credentials=creds)
+        service = get_drive_service()
 
         file_metadata = {
             'name': filename,
-            'parents': [PDF_Folder_ID],
-            'mimeType': 'application/pdf'
+            'parents': [PDF_Folder_ID]
         }
 
-        media = io.BytesIO(pdf_buffer.getvalue())
-        from googleapiclient.http import MediaIoBaseUpload
-        media_body = MediaIoBaseUpload(media, mimetype='application/pdf', resumable=True)
-        uploaded_file = service.files().create(body=file_metadata, media_body=media_body, fields='id').execute()
+        media = MediaIoBaseUpload(pdf_buffer, mimetype='application/pdf', resumable=True)
+
+        uploaded_file = service.files().create(
+            body=file_metadata,
+            media_body=media,
+            fields='id'
+        ).execute()
 
         file_id = uploaded_file.get('id')
 
-        permission = {
-            'role': 'reader',
-            'type': 'anyone'
-        }
-        service.permissions().create(fileId=file_id, body=permission).execute()
+        # Make the file viewable via link
+        service.permissions().create(
+            fileId=file_id,
+            body={'type': 'anyone', 'role': 'reader'},
+        ).execute()
 
-        shareable_link = f"https://drive.google.com/file/d/{file_id}/view?usp=sharing"
-        return shareable_link
+        file_link = f"https://drive.google.com/file/d/{file_id}/view?usp=sharing"
+        return file_link
 
     except Exception as e:
         st.error(f"Error uploading PDF to Drive: {e}")
-        return None
+        return ""
 
 
 # STEP 7: Zapier integration
