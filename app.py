@@ -360,6 +360,7 @@ def calculate_pricing(plants_data, installation_data):
             'deer_guard_price': deer_guard_price,
             'tree_stakes_price': tree_stakes_price,
             'mulch_sku': mulch_sku,
+            'mulch_type': mulch_type,
         }
         
     except Exception as e:
@@ -393,6 +394,7 @@ def generate_pdf(plants_data, installation_data, customer_data, pricing_data):
         deer_guard_price = pricing_data.get("deer_guard_price", 0)
         tree_stakes_price = pricing_data.get("tree_stakes_price", 0)
         mulch_sku = pricing_data.get("mulch_sku", 0)
+        mulch_type = pricing_data.get("mulch_type", 0)
 
         now = datetime.datetime.now()
         date_sold = f"{now.month}/{now.day}/{now.year}"
@@ -441,6 +443,7 @@ def generate_pdf(plants_data, installation_data, customer_data, pricing_data):
             "total_tablet_quantity": tablet_total_quantity,
             "total_mulch_quantity": mulch_total_quantity,
             "mulch_sku": mulch_sku,
+            "mulch_type": mulch_type,
             "total_soil_conditioner_quantity": soil_conditioner_total_quantity,
             "tablet_total_price": f"${tablet_total_price:.2f}",
             "mulch_total_price": f"${mulch_total_price:.2f}",
