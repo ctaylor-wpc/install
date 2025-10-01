@@ -525,6 +525,7 @@ def upload_pdf_to_drive(pdf_buffer, filename):
             body=file_metadata,
             media_body=media,
             fields="id"
+            supportsAllDrives=True
         ).execute()
 
         file_id = uploaded_file.get("id")
@@ -532,6 +533,7 @@ def upload_pdf_to_drive(pdf_buffer, filename):
         service.permissions().create(
             fileId=file_id,
             body={"type": "anyone", "role": "reader"},
+            supportsAllDrives=True
         ).execute()
 
         return f"https://drive.google.com/file/d/{file_id}/view?usp=sharing"
