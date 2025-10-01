@@ -513,21 +513,33 @@ def upload_pdf_to_drive(pdf_buffer, filename):
     Returns the sharable link.
     """
     try:
-        drive = get_drive_client()
-        pdf_file = drive.CreateFile({
-            'title': filename,
-            'parents': [{'id': PDF_FOLDER_ID}],
+        sa_info = _get_service_account_info_from_secrets()
+        creds = Credentials.from_service_account_info(sa_info, scopes=SCOPES)
+
+        service = build('drive', 'v3', credentials=creds)
+
+        file_metadata = {
+            'name': filename,
+            'parents': [PDF_Folder_ID],
             'mimeType': 'application/pdf'
-        })
-        pdf_buffer.seek(0)
-        pdf_file.SetContentString(pdf_buffer.getvalue())
-        pdf_file.Upload()
-        pdf_file.InsertPermission({
-            'type': 'anyone',
-            'value': 'anyone',
-            'role': 'reader'
-        })
-        return pdf_file['alternateLink']
+        }
+
+        media = io.BytesIO(pdf_buffer.getvalue())
+        from googleapiclient.http import MediaIoBaseUpload
+        media_body = MediaIoBaseUpload(media, mimetype='application/pdf', resumable=True)
+        uploaded_file = service.files().create(body=file_metadata, media_body=media_body, fields='id').execute()
+
+        file_id = uploaded_file.get('id')
+
+        permission = {
+            'role': 'reader',
+            'type': 'anyone'
+        }
+        service.permissions().create(fileId=file_id, body=permission).execute()
+
+        shareable_link = f"https://drive.google.com/file/d/{file_id}/view?usp=sharing"
+        return shareable_link
+
     except Exception as e:
         st.error(f"Error uploading PDF to Drive: {e}")
         return None
