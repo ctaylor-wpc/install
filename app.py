@@ -537,36 +537,6 @@ def upload_pdf_to_drive(pdf_buffer, filename):
         return ""
 
 
-# STEP 7: Zapier integration
-def send_to_zapier(plants_data, installation_data, customer_data, pricing_data):
-    """Send data to Zapier webhook"""
-    try:
-        webhook_url = st.secrets.get("zapier", {}).get("webhook_url", "")
-        if not webhook_url:
-            st.warning("Zapier webhook URL not found in secrets - skipping database integration")
-            return True
-        
-        # Add data validation before sending
-        required_fields = ['customer_name', 'customer_email']
-        for field in required_fields:
-            if not customer_data.get(field):
-                st.error(f"Missing required field: {field}")
-                return False
-        
-        payload = {
-            "plants": plants_data,
-            "installation": installation_data,
-            "customer": customer_data,
-            "pricing": pricing_data,
-            "timestamp": datetime.datetime.now().isoformat()  # Add timestamp
-        }
-        
-        response = requests.post(webhook_url, json=payload, timeout=30)
-            
-    except Exception as e:
-        st.error(f"Error with Zapier integration: {e}")
-        return False
-
 
 
 # MAIN APPLICATION INTERFACE
