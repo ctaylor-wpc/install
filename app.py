@@ -16,11 +16,13 @@ import gspread
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 import datetime
-from pydrive2.auth import GoogleAuth
+from pydrive2.auth import GoogleAuth, GoogleDrive
 from pydrive2.drive import GoogleDrive
 import json
 
-# Allow access to google sheet
+
+
+# Allow access to Google Sheet Dashboard
 def _get_service_account_info_from_secrets():
     """
     Reads service account JSON stored in st.secrets["gcp"]["service_account_json"].
@@ -46,6 +48,23 @@ def get_gspread_client():
 SHEET_ID = "1kEOIdxYqPKx6R47sNdaY8lWR8PmLc6bz_PyHtYH1M7Q"
 
 
+
+# Allow Access to Google Drive for PDF Upload
+def get_drive_client():
+    """
+    Returns a GoogleDrive client using the service account from st.secrets.
+    """
+    sa_info = _get_service_account_info_from_secrets()
+    gauth = GoogleAuth()
+    gauth.settings['client_config'] = sa_info
+    gauth.ServiceAuth()
+    drive = GoogleDrive(gauth)
+    return drive
+
+PDF_Folder_ID ="1UinHT5ZXjDrGXwfX-WBwge28nnHLfgq8"
+
+
+
 # STEP 0: Initialize session state and configuration
 def initialize_app():
     """Initialize the Streamlit app with session state variables"""
@@ -63,6 +82,7 @@ def clear_all_data():
     for key in list(st.session_state.keys()):
         del st.session_state[key]
     initialize_app()
+
 
 
 # STEP 1: Input validation and character cleaning functions
@@ -87,6 +107,7 @@ def validate_numeric_input(value, field_name):
     except ValueError:
         st.error(f"Invalid numeric value for {field_name}")
         return 0
+
 
 
 # STEP 2: Plant size and mulch lookup tables
@@ -146,6 +167,7 @@ def get_mulch_soil_tablet_quantities(plant_size, mulch_type, quantity):
         return 0, 0, 0
 
 
+
 # STEP 3: Google Maps API integration for distance calculation
 def calculate_driving_distance(origin, destination):
     """Calculate driving distance using Google Maps API"""
@@ -178,6 +200,7 @@ def calculate_driving_distance(origin, destination):
     except Exception as e:
         st.error(f"Error calculating distance: {e}")
         return 0
+
 
 
 # STEP 4: Pricing calculations
@@ -347,6 +370,7 @@ def calculate_pricing(plants_data, installation_data):
         return {}
 
 
+
 # STEP 5: PDF generation
 def generate_pdf(plants_data, installation_data, customer_data, pricing_data):
     """Generate PDF quote document"""
@@ -372,6 +396,9 @@ def generate_pdf(plants_data, installation_data, customer_data, pricing_data):
         deer_guard_price = pricing_data.get("deer_guard_price", 0)
         tree_stakes_price = pricing_data.get("tree_stakes_price", 0)
         mulch_sku = pricing_data.get("mulch_sku", 0)
+
+        now = datetime.datetime.now()
+        date_sold = f"{now.month}/{now.day}/{now.year}"
 
         installation_cost = pricing_data.get("installation_cost", 0)
 
@@ -426,6 +453,7 @@ def generate_pdf(plants_data, installation_data, customer_data, pricing_data):
             "installation_cost": f"${installation_cost:.2f}",
             "all_materials_discount_total": f"${all_materials_discount_total:.2f}",
             "planting_costs_total": f"${planting_costs_total:.2f}",
+            "date_sold": date_sold,
         }
 
         def sanitize_for_pdf(value):
@@ -477,7 +505,35 @@ def generate_pdf(plants_data, installation_data, customer_data, pricing_data):
         return None
 
 
-# STEP 6: Zapier integration
+
+#STEP 6: Upload PDF to Google Drive
+def upload_pdf_to_drive(pdf_buffer, filename):
+    """
+    Uploads the PDF in pdf_buffer to a specific folder in Google Drive.
+    Returns the sharable link.
+    """
+    try:
+        drive = get_drive_client()
+        pdf_file = drive.CreateFile({
+            'title': filename,
+            'parents': [{'id': PDF_FOLDER_ID}],
+            'mimeType': 'application/pdf'
+        })
+        pdf_buffer.seek(0)
+        pdf_file.SetContentString(pdf_buffer.getvalue())
+        pdf_file.Upload()
+        pdf_file.InsertPermission({
+            'type': 'anyone',
+            'value': 'anyone',
+            'role': 'reader'
+        })
+        return pdf_file['alternateLink']
+    except Exception as e:
+        st.error(f"Error uploading PDF to Drive: {e}")
+        return None
+
+
+# STEP 7: Zapier integration
 def send_to_zapier(plants_data, installation_data, customer_data, pricing_data):
     """Send data to Zapier webhook"""
     try:
@@ -508,7 +564,8 @@ def send_to_zapier(plants_data, installation_data, customer_data, pricing_data):
         return False
 
 
-# STEP 7: Main application interface
+
+# MAIN APPLICATION INTERFACE
 def main():
     """Main application interface"""
     initialize_app()
@@ -764,8 +821,9 @@ def main():
                         address = f"{inst.get('customer_street_address','')}, {inst.get('customer_city','')}, KY {inst.get('customer_zip','')}".strip().strip(",")
                         phone = cust.get("customer_phone", "")
                         total_amount = pricing.get("final_total", 0.0)
-                        now = datetime.datetime.now()
-                        sold_on = f"{now.month}/{now.day}/{now.year}"
+                        sold_on = datetime.date.today().strftime("%m/%d/%Y")
+
+                        pdf_link = upload_pdf_to_drive(pdf_buffer, f"{st.session_state.customer_data['customer_name']}_quote.pdf")
 
                         row_data = [
                             customer_name,            # A Customer Name
@@ -778,7 +836,7 @@ def main():
                             "",                       # H BUD Clear On
                             "",                       # I Scheduled For
                             "",                       # J Completed
-                            ""                        # K PDF File (left blank for now)
+                            pdf_link                        # K PDF File (left blank for now)
                         ]
 
                         sheet.append_row(row_data, value_input_option='USER_ENTERED')
