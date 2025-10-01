@@ -524,7 +524,7 @@ def upload_pdf_to_drive(pdf_buffer, filename):
         uploaded_file = service.files().create(
             body=file_metadata,
             media_body=media,
-            fields="id"
+            fields="id",
             supportsAllDrives=True
         ).execute()
 
