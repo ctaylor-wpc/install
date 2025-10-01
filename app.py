@@ -536,10 +536,6 @@ def upload_pdf_to_drive(pdf_buffer, filename):
         st.error(f"Error uploading PDF to Drive: {e}")
         return ""
 
-today_str = datetime.datetime.today().strftime("%m%d%Y")
-customer_name_clean = st.session_state.customer_data['customer_name'].replace(" ", "_")
-pdf_filename = f"{customer_name_clean}-{today_str}-Installation.pdf"
-
 # MAIN APPLICATION INTERFACE
 def main():
     """Main application interface"""
@@ -733,6 +729,10 @@ def main():
                 st.error("Please fill in all required fields marked with *")
     
     # Phase 3: PDF Generation and Completion
+    today_str = datetime.datetime.today().strftime("%m%d%Y")
+    customer_name_clean = st.session_state.customer_data['customer_name'].replace(" ", "_")
+    pdf_filename = f"{customer_name_clean}-{today_str}-Installation.pdf"
+
     elif st.session_state.phase == 3:
         st.header("Quote Completed!")
         
