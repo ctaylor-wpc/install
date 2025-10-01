@@ -513,7 +513,7 @@ def upload_pdf_to_drive(pdf_buffer, filename):
     Returns the shareable link to the uploaded file.
     """
     try:
-        service = get_drive_service()
+        service = get_drive_client()
 
         file_metadata = {
             'name': filename,
