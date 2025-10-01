@@ -20,6 +20,7 @@ from pydrive2.auth import GoogleAuth
 from pydrive2.drive import GoogleDrive
 import json
 
+# Allow access to google sheet
 def _get_service_account_info_from_secrets():
     """
     Reads service account JSON stored in st.secrets["gcp"]["service_account_json"].
@@ -28,7 +29,6 @@ def _get_service_account_info_from_secrets():
     sa = st.secrets.get("gcp", {}).get("service_account_json")
     if not sa:
         raise KeyError("Service account JSON not found: check st.secrets['gcp']['service_account_json']")
-    # If it's already dict-like (rare in secrets), use it. Otherwise parse JSON string.
     if isinstance(sa, str):
         return json.loads(sa)
     return sa
@@ -43,18 +43,7 @@ def get_gspread_client():
     creds = Credentials.from_service_account_info(sa_info, scopes=SCOPES)
     return gspread.authorize(creds)
 
-client = get_gspread_client()
-
-# open by sheet ID (easiest/reliable way)
 SHEET_ID = "1kEOIdxYqPKx6R47sNdaY8lWR8PmLc6bz_PyHtYH1M7Q"
-sheet = client.open_by_key(SHEET_ID).sheet1
-
-# quick test: append a row
-sheet.append_row(["hello", "world"])
-
-
-
-
 
 
 # STEP 0: Initialize session state and configuration
@@ -74,6 +63,7 @@ def clear_all_data():
     for key in list(st.session_state.keys()):
         del st.session_state[key]
     initialize_app()
+
 
 # STEP 1: Input validation and character cleaning functions
 def clean_text_input(text_input):
@@ -97,6 +87,7 @@ def validate_numeric_input(value, field_name):
     except ValueError:
         st.error(f"Invalid numeric value for {field_name}")
         return 0
+
 
 # STEP 2: Plant size and mulch lookup tables
 def get_mulch_soil_tablet_quantities(plant_size, mulch_type, quantity):
@@ -154,6 +145,7 @@ def get_mulch_soil_tablet_quantities(plant_size, mulch_type, quantity):
         st.error(f"Error calculating quantities: {e}")
         return 0, 0, 0
 
+
 # STEP 3: Google Maps API integration for distance calculation
 def calculate_driving_distance(origin, destination):
     """Calculate driving distance using Google Maps API"""
@@ -186,6 +178,7 @@ def calculate_driving_distance(origin, destination):
     except Exception as e:
         st.error(f"Error calculating distance: {e}")
         return 0
+
 
 # STEP 4: Pricing calculations
 def calculate_pricing(plants_data, installation_data):
@@ -353,6 +346,7 @@ def calculate_pricing(plants_data, installation_data):
         st.error(f"Error in pricing calculations: {e}")
         return {}
 
+
 # STEP 5: PDF generation
 def generate_pdf(plants_data, installation_data, customer_data, pricing_data):
     """Generate PDF quote document"""
@@ -482,6 +476,7 @@ def generate_pdf(plants_data, installation_data, customer_data, pricing_data):
         st.error(f"Error generating PDF: {e}")
         return None
 
+
 # STEP 6: Zapier integration
 def send_to_zapier(plants_data, installation_data, customer_data, pricing_data):
     """Send data to Zapier webhook"""
@@ -511,6 +506,7 @@ def send_to_zapier(plants_data, installation_data, customer_data, pricing_data):
     except Exception as e:
         st.error(f"Error with Zapier integration: {e}")
         return False
+
 
 # STEP 7: Main application interface
 def main():
@@ -734,9 +730,63 @@ def main():
             st.session_state.pricing_data
         )
         
-        if st.button("Create a New Installation"):
-            clear_all_data()
-            st.rerun()
+        st.markdown("---")
+        col1, col2 = st.columns(2)
+
+
+        # Clear everything and restart
+        with col1:
+            if st.button("Create a New Installation"):
+                # Clear everything and restart
+                clear_all_data()
+                st.rerun()
+
+
+        # Send to Google Sheet Dashboard
+        with col2:
+            if st.button("Send to Google Sheet Dashboard"):
+
+                # Basic validation
+                if not st.session_state.get("customer_data") or not st.session_state.get("installation_data") or not st.session_state.get("pricing_data"):
+                    st.error("Missing data — please complete the quote before sending to the dashboard.")
+
+                # Open and edit Google Sheet Dashboard
+                else:
+                    try:
+                        client = get_gspread_client()
+                        sheet = client.open_by_key(SHEET_ID).sheet1
+
+                        cust = st.session_state.get("customer_data", {})
+                        inst = st.session_state.get("installation_data", {})
+                        pricing = st.session_state.get("pricing_data", {})
+
+                        customer_name = cust.get("customer_name", "")
+                        address = f"{inst.get('customer_street_address','')}, {inst.get('customer_city','')}, KY {inst.get('customer_zip','')}".strip().strip(",")
+                        phone = cust.get("customer_phone", "")
+                        total_amount = pricing.get("final_total", 0.0)
+                        now = datetime.datetime.now()
+                        sold_on = f"{now.month}/{now.day}/{now.year}"
+
+                        row_data = [
+                            customer_name,            # A Customer Name
+                            address,                  # B Address
+                            phone,                    # C Phone Number
+                            f"${total_amount:.2f}",   # D Total Amount
+                            "Sold",                   # E Current Status
+                            sold_on,                  # F Sold On
+                            "",                       # G BUD Called On
+                            "",                       # H BUD Clear On
+                            "",                       # I Scheduled For
+                            "",                       # J Completed
+                            ""                        # K PDF File (left blank for now)
+                        ]
+
+                        sheet.append_row(row_data, value_input_option='USER_ENTERED')
+
+                        st.success("Install added to Dashboard ✅")
+
+                    except Exception as e:
+                        st.error(f"Failed to send to Google Sheet: {e}")
 
 if __name__ == "__main__":
     main()
