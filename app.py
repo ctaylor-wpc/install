@@ -696,6 +696,8 @@ def main():
             install_location = st.text_input("Where will this be installed in the yard?*", key="install_location")
             
         with col2:
+            customer_number_response = st.text_input("Customer Number (if known):", key="customer_number")
+            order_number_response = st.text_input("Order Number (if known):", key="order_number")
             gate_response = st.radio("Is there a gate?*", ["Yes", "No"], key="gate_response")
             gate_width = st.radio("Is it a minimum of 42\" wide?", ["Yes", "No"], key="gate_width")
             dogs_response = st.radio("Are there dogs?*", ["Yes", "No"], key="dogs_response")
@@ -723,9 +725,6 @@ def main():
 
             if not utilities_check:
                 st.warning('Please select at least "No Obstacles Near Planting."')
-
-            customer_number_response = st.text_input("Customer Number (if known):*", key="customer_number")
-            order_number_response = st.text_input("Order Number (if known):*", key="order_number")
 
         notes = st.text_area("Notes:", key="notes")
         employee_initials = st.text_input("Employee Initials:", key="employee_initials")
