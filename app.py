@@ -420,7 +420,7 @@ def generate_pdf(plants_data, installation_data, customer_data, pricing_data):
             "gate_width": customer_data.get("gate_width", ""),
             "dogs_response": customer_data.get("dogs_response", ""),
             "install_location": customer_data.get("install_location", ""),
-            "utilities_check": customer_data.get("utilities_check", ""),
+            "utilities_check": " / ".join(customer_data.get("utilities_check", [])),
             "notes": customer_data.get("notes", ""),
             "employee_initials": customer_data.get("employee_initials", ""),
             "mulch_type": installation_data.get("mulch_type", ""),
@@ -699,7 +699,28 @@ def main():
             gate_response = st.radio("Is there a gate?*", ["Yes", "No"], key="gate_response")
             gate_width = st.radio("Is it a minimum of 42\" wide?", ["Yes", "No"], key="gate_width")
             dogs_response = st.radio("Are there dogs?*", ["Yes", "No"], key="dogs_response")
-            utilities_check = st.radio("Are utilities marked?*", ["Yes", "No"], key="utilities_check")
+            utilities_options = [
+                "Underground Dog Fence",
+                "Septic Tank",
+                "Septic Field",
+                "Geothermal",
+                "Landscape Lighting",
+                "Gas to Outdoor Kitchen or Grill",
+                "Irrigation Lines",
+                "Propane Tank",
+                "Well or Spring",
+                "Stump or Existing Tree",
+                "No Obstacles Near Planting",
+            ]
+
+            utilities_check = st.multiselect(
+                "Mark Any Obstacles Near Planting:*",
+                options=utilities_options,
+                key="utilities_check"
+            )
+
+            if not utilities_check:
+                st.warning('Please select at least "No Obstacles Near Planting."')
         
         notes = st.text_area("Notes:", key="notes")
         employee_initials = st.text_input("Employee Initials:", key="employee_initials")
