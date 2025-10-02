@@ -628,7 +628,8 @@ def main():
             if st.button("Calculate Quote"):
                 if street_address and city and zip_code:
                     # Save installation data
-                    st.session_state.installation_data = {
+                    st.session_state.installation_data = st.session_state.get("installation_data", {})
+                    st.session_state.installation_data.update({
                         'origin_location': origin_location,
                         'mulch_type': mulch_type,
                         'tree_stakes_quantity': tree_stakes,
@@ -637,7 +638,7 @@ def main():
                         'customer_street_address': clean_text_input(street_address),
                         'customer_city': clean_text_input(city),
                         'customer_zip': zip_code
-                    }
+                    })
                     st.session_state.step = 'C'
                     st.rerun()
                 else:
