@@ -698,8 +698,15 @@ def main():
         with col2:
             customer_number_response = st.text_input("Customer Number (if known):", key="customer_number")
             order_number_response = st.text_input("Order Number (if known):", key="order_number")
-            gate_response = st.radio("Is there a gate?*", ["Yes", "No"], key="gate_response")
-            gate_width = st.radio("Is it a minimum of 42\" wide?", ["Yes", "No"], key="gate_width")
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+                gate_response = st.radio("Is there a gate?*", ["Yes", "No"], key="gate_response")
+
+            with col2:
+                gate_width = st.radio("Is it a minimum of 42\" wide?", ["Yes", "No"], key="gate_width")
+
             dogs_response = st.radio("Are there dogs?*", ["Yes", "No"], key="dogs_response")
 
             # Utilities Multi-select
