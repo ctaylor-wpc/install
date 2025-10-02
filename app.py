@@ -693,12 +693,12 @@ def main():
             customer_phone = st.text_input("Phone Number:*", key="customer_phone")
             customer_subdivision = st.text_input("Subdivision:*", key="customer_subdivision")
             customer_cross_street = st.text_input("Nearest Cross Street:*", key="customer_cross_street")
+            install_location = st.text_input("Where will this be installed in the yard?*", key="install_location")
             
         with col2:
             gate_response = st.radio("Is there a gate?*", ["Yes", "No"], key="gate_response")
             gate_width = st.radio("Is it a minimum of 42\" wide?", ["Yes", "No"], key="gate_width")
             dogs_response = st.radio("Are there dogs?*", ["Yes", "No"], key="dogs_response")
-            install_location = st.text_input("Where will this be installed in the yard?*", key="install_location")
             utilities_check = st.radio("Are utilities marked?*", ["Yes", "No"], key="utilities_check")
         
         notes = st.text_area("Notes:", key="notes")
