@@ -391,7 +391,7 @@ def generate_pdf(plants_data, installation_data, customer_data, pricing_data):
         deer_guard_price = pricing_data.get("deer_guard_price", 0)
         tree_stakes_price = pricing_data.get("tree_stakes_price", 0)
         mulch_sku = pricing_data.get("mulch_sku", 0)
-        mulch_type = pricing_data.get("mulch_type", 0)
+        mulch_type = installation_data.get('mulch_type', '')
 
         now = datetime.datetime.now()
         date_sold = f"{now.month}/{now.day}/{now.year}"
@@ -815,8 +815,9 @@ def main():
                             pdf_link,                 # K PDF File
                             customer_subdivision,     # L Subdivision (hidden)
                             customer_cross_street,    # M Cross Street (hidden)
-                            plant_list,               # N Plant List (hidden)
+                            install_location,         # N Install Location (hidden)
                             employee_initials,        # O Employee Initials (hidden)
+                            origin_location,          # P Origin Location (hidden)
                             
                         ]
 
