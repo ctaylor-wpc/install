@@ -789,9 +789,6 @@ def main():
                         phone = cust.get("customer_phone", "")
                         total_amount = pricing.get("final_total", 0.0)
                         sold_on = datetime.date.today().strftime("%m/%d/%Y")
-
-
-                        customer_name: customer_data.get("customer_name", "")
                         customer_email: customer_data.get("customer_email", "")
                         customer_phone: customer_data.get("customer_phone", "")
                         customer_street_address: installation_data.get('customer_street_address', '')
@@ -832,8 +829,6 @@ def main():
                         planting_costs_total: f"${planting_costs_total:.2f}"
                         date_sold: date_sold
 
-
-
                         pdf_link = upload_pdf_to_drive(pdf_buffer, pdf_filename)
 
                         row_data = [
@@ -847,7 +842,12 @@ def main():
                             "",                       # H BUD Clear On
                             "",                       # I Scheduled For
                             "",                       # J Completed
-                            pdf_link                  # K PDF File (left blank for now)
+                            pdf_link,                 # K PDF File
+                            customer_subdivision,     # L Subdivision (hidden)
+                            customer_cross_street,    # M Cross Street (hidden)
+                            plant_list,               # N Plant List (hidden)
+                            employee_initials,        # O Employee Initials (hidden)
+                            
                         ]
 
                         sheet.append_row(row_data, value_input_option='USER_ENTERED')
