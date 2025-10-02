@@ -820,8 +820,6 @@ def main():
                             install_location,         # N Install Location (hidden)
                             employee_initials,        # O Employee Initials (hidden)
                             origin_location,          # P Origin Location (hidden)
-                            mulch_type,               # Q Mulch Type (hidden)
-                            
                         ]
 
                         sheet.append_row(row_data, value_input_option='USER_ENTERED')
