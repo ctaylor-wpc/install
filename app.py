@@ -783,6 +783,7 @@ def main():
                         cust = st.session_state.get("customer_data", {})
                         inst = st.session_state.get("installation_data", {})
                         pricing = st.session_state.get("pricing_data", {})
+                        plants_data = st.session_state.get("plants_data", {})
 
                         customer_name = cust.get("customer_name", "")
                         address = f"{inst.get('customer_street_address','')}, {inst.get('customer_city','')}, KY {inst.get('customer_zip','')}".strip().strip(",")
