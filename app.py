@@ -798,6 +798,7 @@ def main():
                         notes = cust.get("notes", "")
                         employee_initials = cust.get("employee_initials", "")
                         origin_location = inst.get("origin_location", "")
+                        mulch_type = inst.get("mulch_type", "")
                         plant_list = "\n".join([f"{p['quantity']} x {p['plant_material']} ({p['size']}) - ${p['price']:.2f}" for p in plants_data.values()])
 
                         pdf_link = upload_pdf_to_drive(pdf_buffer, pdf_filename)
@@ -819,6 +820,7 @@ def main():
                             install_location,         # N Install Location (hidden)
                             employee_initials,        # O Employee Initials (hidden)
                             origin_location,          # P Origin Location (hidden)
+                            mulch_type,               # Q Mulch Type (hidden)
                             
                         ]
 
