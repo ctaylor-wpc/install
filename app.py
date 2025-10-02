@@ -423,6 +423,8 @@ def generate_pdf(plants_data, installation_data, customer_data, pricing_data):
             "utilities_check": " / ".join(customer_data.get("utilities_check", [])),
             "notes": customer_data.get("notes", ""),
             "employee_initials": customer_data.get("employee_initials", ""),
+            "pos_customer_number": customer_data.get("customer_number", ""),
+            "pos_order_number": customer_data.get("order_number", ""),
             "mulch_type": installation_data.get("mulch_type", ""),
             "tree_stakes_quantity": installation_data.get("tree_stakes_quantity", 0),
             "deer_guards_quantity": installation_data.get("deer_guards_quantity", 0),
@@ -751,6 +753,8 @@ def main():
                     'install_location': clean_text_input(install_location),
                     'utilities_check': utilities_check,
                     'notes': clean_text_input(notes),
+                    'customer_number': clean_text_input(customer_number_response),
+                    'order_number': clean_text_input(order_number_response),
                     'employee_initials': clean_text_input(employee_initials)
                 }
                 
