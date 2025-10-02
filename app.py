@@ -439,7 +439,7 @@ def generate_pdf(plants_data, installation_data, customer_data, pricing_data):
             "total_tablet_quantity": tablet_total_quantity,
             "total_mulch_quantity": mulch_total_quantity,
             "mulch_sku": mulch_sku,
-            "mulch_type": pricing_data.get('mulch_type', ''),
+            "mulch_type": pricing_data.get('mulch_type', 'asdf'),
             "total_soil_conditioner_quantity": soil_conditioner_total_quantity,
             "tablet_total_price": f"${tablet_total_price:.2f}",
             "mulch_total_price": f"${mulch_total_price:.2f}",
