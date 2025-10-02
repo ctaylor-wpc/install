@@ -734,6 +734,18 @@ def main():
         st.header("Quote Completed!")
         
         st.success("Your quote has been generated successfully!")
+
+        template_path = "install_template.pdf"
+        template_pdf = PdfReader(template_path)
+
+        print("PDF Form Field Names:")
+        for page_num, page in enumerate(template_pdf.pages, start=1):
+            annotations = page.get("/Annots")
+            if annotations:
+                for annotation in annotations:
+                    field_name = annotation.get("/T")
+                    if field_name:
+                        print(f"Page {page_num}: {field_name}")
         
         # Generate PDF
         pdf_buffer = generate_pdf(
