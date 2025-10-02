@@ -391,7 +391,6 @@ def generate_pdf(plants_data, installation_data, customer_data, pricing_data):
         deer_guard_price = pricing_data.get("deer_guard_price", 0)
         tree_stakes_price = pricing_data.get("tree_stakes_price", 0)
         mulch_sku = pricing_data.get("mulch_sku", 0)
-        mulch_type = installation_data.get('mulch_type', '')
 
         now = datetime.datetime.now()
         date_sold = f"{now.month}/{now.day}/{now.year}"
@@ -440,7 +439,7 @@ def generate_pdf(plants_data, installation_data, customer_data, pricing_data):
             "total_tablet_quantity": tablet_total_quantity,
             "total_mulch_quantity": mulch_total_quantity,
             "mulch_sku": mulch_sku,
-            "mulch_type": mulch_type,
+            "mulch_type": installation_data.get('mulch_type', ''),
             "total_soil_conditioner_quantity": soil_conditioner_total_quantity,
             "tablet_total_price": f"${tablet_total_price:.2f}",
             "mulch_total_price": f"${mulch_total_price:.2f}",
@@ -735,17 +734,6 @@ def main():
         
         st.success("Your quote has been generated successfully!")
 
-        template_path = "install_template.pdf"
-        template_pdf = PdfReader(template_path)
-
-        print("PDF Form Field Names:")
-        for page_num, page in enumerate(template_pdf.pages, start=1):
-            annotations = page.get("/Annots")
-            if annotations:
-                for annotation in annotations:
-                    field_name = annotation.get("/T")
-                    if field_name:
-                        print(f"Page {page_num}: {field_name}")
         
         # Generate PDF
         pdf_buffer = generate_pdf(
