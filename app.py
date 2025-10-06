@@ -430,9 +430,13 @@ def generate_pdf(plants_data, installation_data, customer_data, pricing_data):
             "deer_guards_quantity": installation_data.get("deer_guards_quantity", 0),
             "installation_type": installation_data.get("installation_type", ""),
             "origin_location": installation_data.get("origin_location", ""),
-            "plant_list": "\n".join(
-                [f"{p['quantity']} x {p['plant_material']} ({p['size']}) - ${p['price']:.2f}" for p in plants_data.values()]
-            ),
+            "plant_list": "\n".join([
+                f"{p['quantity']} x {p['plant_material']} ({p['size']}) - ${p['price']:.2f}"
+                + (f" ({p['discount_percent']}% off" if p.get('discount_percent') else "")
+                + (f", ${p['discount_dollars']:.2f} off" if p.get('discount_dollars') else "")
+                + (")" if p.get('discount_percent') or p.get('discount_dollars') else "")
+                for p in plants_data.values()
+            ]),
             "total_price": f"${pricing_data.get('final_total', 0):.2f}",
             "subtotal": f"${pricing_data.get('final_subtotal', 0):.2f}",
             "tax": f"${pricing_data.get('final_tax', 0):.2f}",
@@ -542,14 +546,14 @@ def main():
     """Main application interface"""
     initialize_app()
     
-    st.title("🌿 Landscaping Quote Calculator")
+    st.title("🌿 Install App")
     
     # Phase 1: Plant & Installation Data
     if st.session_state.phase == 1:
         
         # Step A: Plants to be installed
         if st.session_state.step == 'A':
-            st.header("Step A: Plants to be Installed")
+            st.header("Plants to be Installed")
             
             current_plant = st.session_state.plant_count
             
@@ -603,7 +607,7 @@ def main():
         
         # Step B: Installation Details
         elif st.session_state.step == 'B':
-            st.header("Step B: Installation Details")
+            st.header("Installation Details")
             
             col1, col2 = st.columns(2)
             
