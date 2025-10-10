@@ -849,17 +849,19 @@ def main():
                             phone,                    # C Phone Number
                             f"${total_amount:.2f}",   # D Total Amount
                             "Sold",                   # E Current Status
-                            sold_on,                  # F Sold On
-                            "",                       # G BUD Called On
-                            "",                       # H BUD Clear On
-                            "",                       # I Scheduled For
-                            "",                       # J Completed
-                            pdf_link,                 # K PDF File
-                            customer_subdivision,     # L Subdivision (hidden)
-                            customer_cross_street,    # M Cross Street (hidden)
-                            install_location,         # N Install Location (hidden)
-                            employee_initials,        # O Employee Initials (hidden)
-                            origin_location,          # P Origin Location (hidden)
+                            "",                       # F Notes
+                            sold_on,                  # G Sold On
+                            "",                       # H BUD Called On
+                            "",                       # I BUD Notes
+                            "",                       # J BUD Clear On
+                            "",                       # K Scheduled For
+                            "",                       # L Completed
+                            pdf_link,                 # M PDF File
+                            customer_subdivision,     # N Subdivision (hidden)
+                            customer_cross_street,    # O Cross Street (hidden)
+                            install_location,         # P Install Location (hidden)
+                            employee_initials,        # Q Employee Initials (hidden)
+                            origin_location,          # R Origin Location (hidden)
                         ]
 
                         sheet.append_row(row_data, value_input_option='USER_ENTERED')
