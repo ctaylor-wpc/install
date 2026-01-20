@@ -10,3 +10,5 @@ pdfrw
 pypdf>=3.0.0
 PyMuPDF
 pydrive2
+streamlit-drawable-canvas
+Pillow
