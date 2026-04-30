@@ -16,6 +16,35 @@ from sheets_manager import send_to_dashboard, save_install_state, save_quote_sta
 from pdf_generator import generate_pdf, upload_pdf_to_drive
 
 
+# Distance-based pre-tax minimums
+ORDER_MINIMUMS = [
+    (30,  550,    "within 30 miles"),
+    (60,  1600,   "30–60 miles"),
+    (100, 4000,   "60–100 miles"),
+]
+
+
+def check_order_minimum(pretax_subtotal, miles):
+    """
+    Returns (meets_minimum, warning_message).
+    warning_message is None if the order is fine.
+    """
+    if miles > 100:
+        return False, (
+            f"⛔ ADDRESS IS {miles:.0f} MILES FROM STORE — "
+            "OUTSIDE 100-MILE RANGE. YOU MUST CONTACT THE LANDSCAPE DEPARTMENT FOR APPROVAL BEFORE PROCEEDING."
+        )
+    for limit, minimum, label in ORDER_MINIMUMS:
+        if miles <= limit:
+            if pretax_subtotal < minimum:
+                return False, (
+                    f"⛔ DOES NOT MEET MINIMUM. ADDRESS IS {miles:.0f} MILES FROM STORE "
+                    f"AND MUST MEET ${minimum:,} PRE-TAX MINIMUM."
+                )
+            return True, None
+    return True, None
+
+
 def initialize_app():
     if 'phase' not in st.session_state:
         st.session_state.phase = 1
@@ -31,6 +60,8 @@ def initialize_app():
         st.session_state.editing_existing = False
     if 'is_quote' not in st.session_state:
         st.session_state.is_quote = False
+    if 'show_save_quote_form' not in st.session_state:
+        st.session_state.show_save_quote_form = False
 
 
 def clear_all_data():
@@ -49,11 +80,11 @@ def load_existing_install(install_data):
     st.session_state.plant_count = len(install_data['plants_data'])
     st.session_state.editing_existing = True
     st.session_state.is_quote = install_data.get('record_type', 'install') == 'quote'
+    st.session_state.show_save_quote_form = False
 
-    # Drop into plant review so user can inspect/edit plants before proceeding
     st.session_state.phase = 1
     st.session_state.step = 'A'
-    st.session_state.editing_plant_index = None  # no plant being actively edited yet
+    st.session_state.editing_plant_index = None
 
 
 def clean_text_input(text_input):
@@ -240,7 +271,6 @@ def main():
                 existing_installs = load_install_states()
 
             if existing_installs:
-                # Separate quotes from confirmed installs for clarity
                 confirmed = [i for i in existing_installs if i.get('record_type', 'install') == 'install']
                 quotes = [i for i in existing_installs if i.get('record_type', 'install') == 'quote']
 
@@ -259,7 +289,6 @@ def main():
                         with col4:
                             pdf_link = install.get('pdf_link', '')
                             if pdf_link:
-                                # Opens the PDF in a new tab; browser print dialogue can be used from there
                                 st.link_button("🖨 Print", pdf_link)
                             else:
                                 st.write("—")
@@ -292,12 +321,10 @@ def main():
         if st.session_state.step == 'A':
 
             if st.session_state.editing_existing and st.session_state.plants:
-                # Show the existing plant list so the user can review and edit before moving on
                 st.header("Review Plants")
                 st.info("✏️ Editing existing install — review plants below, then add, edit, or continue.")
 
                 plants = st.session_state.plants
-                # plants keys may be ints or strings depending on how they were serialised
                 sorted_keys = sorted(plants.keys(), key=lambda k: int(k))
 
                 for key in sorted_keys:
@@ -347,7 +374,6 @@ def main():
                 add_col, cont_col = st.columns(2)
                 with add_col:
                     if st.button("➕ Add Another Plant"):
-                        # Use a new key beyond the current max
                         new_key = max((int(k) for k in st.session_state.plants.keys()), default=0) + 1
                         st.session_state.plants[new_key] = {
                             'quantity': 1, 'size': PLANT_SIZE_OPTIONS[0],
@@ -474,6 +500,13 @@ def main():
             if pricing_data:
                 st.success("Quote calculated successfully!")
 
+                # --- Minimum order check ---
+                pretax_subtotal = pricing_data.get('final_subtotal', 0)
+                miles = pricing_data.get('delivery_mileage', 0)
+                meets_min, min_warning = check_order_minimum(pretax_subtotal, miles)
+                if not meets_min:
+                    st.error(min_warning)
+
                 st.subheader("Quote Summary")
                 col1, col2 = st.columns(2)
                 with col1:
@@ -487,7 +520,7 @@ def main():
 
                 st.markdown(f"### **Total: ${pricing_data.get('final_total', 0):.2f}**")
 
-                col1, col2, col3, col4 = st.columns(4)
+                col1, col2, col3 = st.columns(3)
                 with col1:
                     if st.button("Move Forward with Quote"):
                         st.session_state.phase = 2
@@ -497,25 +530,6 @@ def main():
                         st.session_state.step = 'B'
                         st.rerun()
                 with col3:
-                    # Save as a quote without hitting the main dashboard
-                    if st.button("💾 Save Quote"):
-                        # We need at least minimal customer data to save; use what we have or create a placeholder
-                        customer_data_for_quote = st.session_state.get('customer_data', {})
-                        if not customer_data_for_quote:
-                            # Prompt user for a name if we have nothing at all
-                            st.warning("Please go through customer info first, or load a partial save. Quote saved with blank customer info.")
-                            customer_data_for_quote = {}
-
-                        quote_id = save_quote_state(
-                            st.session_state.plants,
-                            st.session_state.installation_data,
-                            customer_data_for_quote,
-                            st.session_state.pricing_data
-                        )
-                        if quote_id:
-                            st.success(f"Quote saved! Quote ID: {quote_id}. You can load it later from the main screen.")
-                            st.session_state.install_id = quote_id
-                with col4:
                     if st.button("Start Over"):
                         clear_all_data()
                         st.rerun()
@@ -584,8 +598,6 @@ By signing below, you're confirming that the installation order is complete and 
         canvas_result = None
 
         if existing_signature_b64:
-            # Signature already on file — show it and keep the canvas hidden unless
-            # the user explicitly asks to re-sign.
             st.success("✓ Signature on file.")
             try:
                 sig_bytes = base64.b64decode(existing_signature_b64)
@@ -608,7 +620,6 @@ By signing below, you're confirming that the installation order is complete and 
                     key="customer_signature_canvas",
                 )
         else:
-            # No existing signature — show the canvas normally.
             st.markdown("**Please sign here:**")
             canvas_result = st_canvas(
                 fill_color="rgba(255, 255, 255, 0)",
@@ -621,104 +632,156 @@ By signing below, you're confirming that the installation order is complete and 
                 key="customer_signature_canvas",
             )
 
-        if st.button("Complete"):
-            if customer_name and customer_email and customer_phone and customer_subdivision and customer_cross_street:
-                customer_data = {
-                    'customer_name': clean_text_input(customer_name),
-                    'customer_email': customer_email,
-                    'customer_phone': customer_phone,
-                    'customer_subdivision': clean_text_input(customer_subdivision),
-                    'customer_cross_street': clean_text_input(customer_cross_street),
-                    'gate_response': gate_response,
-                    'gate_width': gate_width,
-                    'dogs_response': dogs_response,
-                    'install_location': clean_text_input(install_location),
-                    'utilities_check': utilities_check,
-                    'notes': clean_text_input(notes),
-                    'customer_number': clean_text_input(customer_number_response),
-                    'order_number': clean_text_input(order_number_response),
-                    'employee_initials': clean_text_input(employee_initials)
-                }
+        st.markdown("---")
 
-                # Determine which signature to use.
-                new_sig_drawn = (
-                    canvas_result is not None
-                    and canvas_result.image_data is not None
-                    and np.any(canvas_result.image_data[:, :, 3] > 0)
-                )
+        # Helper to snapshot whatever the user has filled in so far (no required-field enforcement)
+        def _collect_current_customer_data():
+            return {
+                'customer_name': clean_text_input(customer_name),
+                'customer_email': customer_email,
+                'customer_phone': customer_phone,
+                'customer_subdivision': clean_text_input(customer_subdivision),
+                'customer_cross_street': clean_text_input(customer_cross_street),
+                'gate_response': gate_response,
+                'gate_width': gate_width,
+                'dogs_response': dogs_response,
+                'install_location': clean_text_input(install_location),
+                'utilities_check': utilities_check,
+                'notes': clean_text_input(notes),
+                'customer_number': clean_text_input(customer_number_response),
+                'order_number': clean_text_input(order_number_response),
+                'employee_initials': clean_text_input(employee_initials),
+            }
 
-                if new_sig_drawn:
-                    sig_img = Image.fromarray(canvas_result.image_data.astype('uint8'), 'RGBA')
-                    sig_buffer = io.BytesIO()
-                    sig_img.save(sig_buffer, format='PNG')
-                    sig_buffer.seek(0)
-                    customer_data['signature_base64'] = base64.b64encode(sig_buffer.getvalue()).decode('utf-8')
-                    st.session_state.customer_signature = canvas_result
-                elif existing_signature_b64:
-                    # Canvas was hidden or left blank — keep the existing signature untouched.
-                    customer_data['signature_base64'] = existing_signature_b64
-                    st.session_state.pop('customer_signature', None)
+        action_col1, action_col2 = st.columns(2)
 
-                st.session_state.customer_data = customer_data
+        with action_col1:
+            if st.button("Complete"):
+                if customer_name and customer_email and customer_phone and customer_subdivision and customer_cross_street:
+                    customer_data = _collect_current_customer_data()
 
-                with st.spinner("Saving to dashboard..."):
-                    try:
-                        # Build the signature object for generate_pdf.
-                        # If a canvas object exists use it; otherwise pass None and let
-                        # generate_pdf pull signature_base64 from customer_data.
-                        customer_signature = st.session_state.get('customer_signature', None)
+                    new_sig_drawn = (
+                        canvas_result is not None
+                        and canvas_result.image_data is not None
+                        and np.any(canvas_result.image_data[:, :, 3] > 0)
+                    )
 
-                        pdf_buffer = generate_pdf(
-                            st.session_state.plants,
-                            st.session_state.installation_data,
-                            st.session_state.customer_data,
-                            st.session_state.pricing_data,
-                            customer_signature
-                        )
+                    if new_sig_drawn:
+                        sig_img = Image.fromarray(canvas_result.image_data.astype('uint8'), 'RGBA')
+                        sig_buffer = io.BytesIO()
+                        sig_img.save(sig_buffer, format='PNG')
+                        sig_buffer.seek(0)
+                        customer_data['signature_base64'] = base64.b64encode(sig_buffer.getvalue()).decode('utf-8')
+                        st.session_state.customer_signature = canvas_result
+                    elif existing_signature_b64:
+                        customer_data['signature_base64'] = existing_signature_b64
+                        st.session_state.pop('customer_signature', None)
 
-                        today_str = datetime.datetime.today().strftime("%m%d%Y")
-                        customer_name_clean = st.session_state.customer_data['customer_name'].replace(" ", "_")
-                        install_id = st.session_state.get('install_id', '')
+                    st.session_state.customer_data = customer_data
 
-                        if install_id:
-                            pdf_filename = f"{install_id}-{customer_name_clean}-{today_str}-Installation.pdf"
-                        else:
-                            pdf_filename = f"{customer_name_clean}-{today_str}-Installation.pdf"
+                    with st.spinner("Saving to dashboard..."):
+                        try:
+                            customer_signature = st.session_state.get('customer_signature', None)
 
-                        pdf_buffer.seek(0)
-                        pdf_link = upload_pdf_to_drive(pdf_buffer, pdf_filename, st.session_state.get('install_id'))
-
-                        install_id = send_to_dashboard(
-                            st.session_state.customer_data,
-                            st.session_state.installation_data,
-                            st.session_state.pricing_data,
-                            st.session_state.plants,
-                            pdf_link,
-                            st.session_state.get('install_id')
-                        )
-
-                        if install_id:
-                            save_install_state(
-                                install_id,
+                            pdf_buffer = generate_pdf(
                                 st.session_state.plants,
                                 st.session_state.installation_data,
                                 st.session_state.customer_data,
                                 st.session_state.pricing_data,
-                                pdf_link=pdf_link,
-                                record_type="install"
+                                customer_signature
                             )
 
-                            st.session_state.install_id = install_id
-                            st.session_state.pdf_buffer = pdf_buffer
-                            st.session_state.pdf_filename = pdf_filename
-                            st.session_state.phase = 3
-                            st.rerun()
+                            today_str = datetime.datetime.today().strftime("%m%d%Y")
+                            customer_name_clean = st.session_state.customer_data['customer_name'].replace(" ", "_")
+                            install_id = st.session_state.get('install_id', '')
 
-                    except Exception as e:
-                        st.error(f"Failed to save to dashboard: {e}")
+                            if install_id:
+                                pdf_filename = f"{install_id}-{customer_name_clean}-{today_str}-Installation.pdf"
+                            else:
+                                pdf_filename = f"{customer_name_clean}-{today_str}-Installation.pdf"
 
-            else:
-                st.error("Please fill in all required fields marked with *")
+                            pdf_buffer.seek(0)
+                            pdf_link = upload_pdf_to_drive(pdf_buffer, pdf_filename, st.session_state.get('install_id'))
+
+                            install_id = send_to_dashboard(
+                                st.session_state.customer_data,
+                                st.session_state.installation_data,
+                                st.session_state.pricing_data,
+                                st.session_state.plants,
+                                pdf_link,
+                                st.session_state.get('install_id')
+                            )
+
+                            if install_id:
+                                save_install_state(
+                                    install_id,
+                                    st.session_state.plants,
+                                    st.session_state.installation_data,
+                                    st.session_state.customer_data,
+                                    st.session_state.pricing_data,
+                                    pdf_link=pdf_link,
+                                    record_type="install"
+                                )
+
+                                st.session_state.install_id = install_id
+                                st.session_state.pdf_buffer = pdf_buffer
+                                st.session_state.pdf_filename = pdf_filename
+                                st.session_state.phase = 3
+                                st.rerun()
+
+                        except Exception as e:
+                            st.error(f"Failed to save to dashboard: {e}")
+
+                else:
+                    st.error("Please fill in all required fields marked with *")
+
+        with action_col2:
+            if st.button("💾 Save Quote"):
+                st.session_state.show_save_quote_form = True
+
+        # Save Quote inline form — shown when the button above is pressed
+        if st.session_state.get('show_save_quote_form'):
+            with st.container():
+                st.markdown("**Save this quote — enter customer name:**")
+                q_col1, q_col2, q_col3 = st.columns([2, 2, 1])
+                with q_col1:
+                    quote_first = st.text_input("First Name", key="quote_first_name")
+                with q_col2:
+                    quote_last = st.text_input("Last Name", key="quote_last_name")
+                with q_col3:
+                    st.write("")  # spacer so button aligns better
+                    st.write("")
+                    confirm_save = st.button("Save", key="confirm_save_quote")
+
+                if confirm_save:
+                    if not quote_first and not quote_last:
+                        st.error("Please enter at least a first or last name.")
+                    else:
+                        import random as _random
+                        numeric_id = str(_random.randint(100000, 999999))
+                        name_part = "-".join(filter(None, [
+                            clean_text_input(quote_first).replace(" ", ""),
+                            clean_text_input(quote_last).replace(" ", "")
+                        ]))
+                        quote_id = f"{name_part}-{numeric_id}"
+
+                        # Snapshot whatever customer data exists right now
+                        customer_data_snapshot = _collect_current_customer_data()
+                        # Use the entered name as the canonical customer_name for the record
+                        if not customer_data_snapshot.get('customer_name'):
+                            customer_data_snapshot['customer_name'] = f"{quote_first} {quote_last}".strip()
+
+                        saved_id = save_quote_state(
+                            st.session_state.plants,
+                            st.session_state.installation_data,
+                            customer_data_snapshot,
+                            st.session_state.pricing_data,
+                            quote_id=quote_id
+                        )
+                        if saved_id:
+                            st.success(f"Quote saved! ID: {saved_id}")
+                            st.session_state.install_id = saved_id
+                            st.session_state.show_save_quote_form = False
 
     # =========================================================
     # PHASE 3: Completion

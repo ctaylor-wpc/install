@@ -199,13 +199,16 @@ def save_install_state(install_id, plants_data, installation_data, customer_data
         return False
 
 
-def save_quote_state(plants_data, installation_data, customer_data, pricing_data):
+def save_quote_state(plants_data, installation_data, customer_data, pricing_data, quote_id=None):
     """
     Save a quote-only record to Install States. Does NOT touch the main dashboard sheet.
-    Generates a QUOTE- prefixed ID so it's clearly separated from real installs.
+    If quote_id is provided (e.g. FIRSTNAME-LASTNAME-123456), uses that directly.
+    Otherwise generates a random numeric ID.
     Returns the quote_id on success, None on failure.
     """
-    quote_id = f"QUOTE-{random.randint(100000, 999999)}"
+    if not quote_id:
+        quote_id = str(random.randint(100000, 999999))
+
     success = save_install_state(
         quote_id,
         plants_data,
