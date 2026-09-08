@@ -259,6 +259,20 @@ def signature_base64_to_bytes(sig_base64):
         return None
 
 
+def _get_canvas_image_data(canvas_result):
+    """
+    Safely read .image_data off a streamlit_drawable_canvas result.
+    The component's image_data property can raise RuntimeError (not just return None)
+    when the canvas hasn't sent real paint data back yet - treat that as "nothing drawn".
+    """
+    if canvas_result is None:
+        return None
+    try:
+        return canvas_result.image_data
+    except RuntimeError:
+        return None
+
+
 def main():
     initialize_app()
 
@@ -660,14 +674,14 @@ By signing below, you're confirming that the installation order is complete and 
                 if customer_name and customer_email and customer_phone and customer_subdivision and customer_cross_street:
                     customer_data = _collect_current_customer_data()
 
+                    canvas_image_data = _get_canvas_image_data(canvas_result)
                     new_sig_drawn = (
-                        canvas_result is not None
-                        and canvas_result.image_data is not None
-                        and np.any(canvas_result.image_data[:, :, 3] > 0)
+                        canvas_image_data is not None
+                        and np.any(canvas_image_data[:, :, 3] > 0)
                     )
 
                     if new_sig_drawn:
-                        sig_img = Image.fromarray(canvas_result.image_data.astype('uint8'), 'RGBA')
+                        sig_img = Image.fromarray(canvas_image_data.astype('uint8'), 'RGBA')
                         sig_buffer = io.BytesIO()
                         sig_img.save(sig_buffer, format='PNG')
                         sig_buffer.seek(0)
